@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Calendario Familiar</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,600;1,400&family=DM+Sans:wght@300;400;500&display=swap');
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #faf8f4; --surface: #ffffff; --border: #e8e2d9; --text: #1a1714; --muted: #8a837a;
+    --accent-f: #2d6a4f; --accent-f-light: #d8f3dc;
+    --accent-w: #9b2335; --accent-w-light: #fde8ea;
+    --accent-both: #5c4b8a; --accent-both-light: #ede9f7;
+    --shadow: 0 1px 3px rgba(0,0,0,0.08);
+  }
+  body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+  #setup-screen { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 2rem; }
+  .setup-card { background: var(--surface); border: 1px solid var(--border); border-radius: 20px; padding: 3rem 2.5rem; max-width: 420px; width: 100%; text-align: center; box-shadow: 0 4px 24px rgba(0,0,0,0.06); }
+  .setup-card h1 { font-family: 'Lora', serif; font-size: 2rem; font-weight: 600; margin-bottom: 0.4rem; letter-spacing: -0.02em; }
+  .setup-card > p { color: var(--muted); font-size: 0.9rem; margin-bottom: 2rem; }
+  .who-btn { display: flex; flex-direction: column; align-items: center; padding: 1.2rem 1.5rem; border-radius: 14px; border: 1.5px solid var(--border); cursor: pointer; transition: all 0.15s; margin-bottom: 1rem; background: var(--surface); width: 100%; gap: 4px; }
+  .who-btn:hover { transform: translateY(-1px); box-shadow: var(--shadow); }
+  .who-btn.fernando { border-color: var(--accent-f); }
+  .who-btn.fernando:hover { background: var(--accent-f-light); }
+  .who-btn.esposa { border-color: var(--accent-w); }
+  .who-btn.esposa:hover { background: var(--accent-w-light); }
+  .who-btn .who-name { font-size: 1.1rem; font-weight: 500; }
+  .who-btn .who-role { font-size: 0.8rem; color: var(--muted); }
+  .who-btn.fernando .who-name { color: var(--accent-f); }
+  .who-btn.esposa .who-name { color: var(--accent-w); }
+  #app { display: none; }
+  header { background: var(--surface); border-bottom: 1px solid var(--border); padding: 1rem 1.5rem; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 10; }
+  header h1 { font-family: 'Lora', serif; font-size: 1.3rem; font-weight: 600; letter-spacing: -0.02em; }
+  .user-badge { display: flex; align-items: center; gap: 8px; font-size: 0.85rem; font-weight: 500; }
+  .user-dot { width: 10px; height: 10px; border-radius: 50%; }
+  .sync-info { font-size: 0.75rem; color: var(--muted); text-align: right; }
+  .cal-nav { display: flex; align-items: center; justify-content: space-between; padding: 1rem 1.5rem 0.5rem; }
+  .cal-nav h2 { font-family: 'Lora', serif; font-size: 1.3rem; font-weight: 600; text-transform: capitalize; letter-spacing: -0.02em; }
+  .nav-btn { background: none; border: 1px solid var(--border); border-radius: 8px; padding: 6px 12px; cursor: pointer; font-size: 1rem; color: var(--text); transition: background 0.1s; }
+  .nav-btn:hover { background: var(--border); }
+  .weekdays { display: grid; grid-template-columns: repeat(7, 1fr); padding: 0.5rem 1.5rem 0; gap: 2px; }
+  .weekday-label { text-align: center; font-size: 0.7rem; font-weight: 500; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; padding: 4px 0; }
+  .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); padding: 0 1.5rem 1.5rem; gap: 2px; }
+  .cal-day { min-height: 80px; border: 1px solid var(--border); border-radius: 8px; padding: 6px; background: var(--surface); cursor: pointer; transition: border-color 0.15s, box-shadow 0.15s; overflow: hidden; }
+  .cal-day:hover { border-color: #bbb; box-shadow: var(--shadow); }
+  .cal-day.other-month { background: var(--bg); opacity: 0.5; }
+  .cal-day.today { border-color: var(--accent-f); box-shadow: 0 0 0 1px var(--accent-f); }
+  .day-num { font-size: 0.78rem; font-weight: 500; color: var(--muted); margin-bottom: 4px; display: block; }
+  .cal-day.today .day-num { color: var(--accent-f); font-weight: 600; }
+  .event-pill { display: block; font-size: 0.68rem; padding: 2px 5px; border-radius: 4px; margin-bottom: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: 500; cursor: pointer; }
+  .event-pill.fernando { background: var(--accent-f-light); color: var(--accent-f); }
+  .event-pill.esposa { background: var(--accent-w-light); color: var(--accent-w); }
+  .event-pill.both { background: var(--accent-both-light); color: var(--accent-both); }
+  .more-events { font-size: 0.65rem; color: var(--muted); display: block; }
+  .event-list-section { padding: 0 1.5rem 2rem; }
+  .section-title { font-family: 'Lora', serif; font-size: 1rem; font-weight: 600; margin-bottom: 0.8rem; color: var(--muted); border-top: 1px solid var(--border); padding-top: 1rem; }
+  .event-item { display: flex; align-items: flex-start; gap: 12px; padding: 0.75rem; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; margin-bottom: 8px; }
+  .event-color-bar { width: 4px; border-radius: 2px; align-self: stretch; min-height: 36px; flex-shrink: 0; }
+  .event-color-bar.fernando { background: var(--accent-f); }
+  .event-color-bar.esposa { background: var(--accent-w); }
+  .event-color-bar.both { background: var(--accent-both); }
+  .event-info { flex: 1; }
+  .event-title-text { font-weight: 500; font-size: 0.9rem; }
+  .event-meta { font-size: 0.75rem; color: var(--muted); margin-top: 2px; }
+  .event-actions { display: flex; gap: 6px; align-items: center; }
+  .icon-btn { background: none; border: none; cursor: pointer; color: var(--muted); font-size: 0.85rem; padding: 4px 6px; border-radius: 6px; transition: background 0.1s, color 0.1s; }
+  .icon-btn:hover { background: var(--border); color: var(--text); }
+  .icon-btn.del:hover { background: #fde8ea; color: var(--accent-w); }
+  .fab { position: fixed; bottom: 2rem; right: 2rem; width: 52px; height: 52px; border-radius: 50%; background: var(--text); color: #fff; border: none; font-size: 1.5rem; cursor: pointer; box-shadow: 0 4px 16px rgba(0,0,0,0.2); display: flex; align-items: center; justify-content: center; transition: transform 0.15s; z-index: 20; }
+  .fab:hover { transform: scale(1.05); }
+  .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 100; display: flex; align-items: center; justify-content: center; padding: 1rem; opacity: 0; pointer-events: none; transition: opacity 0.2s; }
+  .modal-overlay.open { opacity: 1; pointer-events: all; }
+  .modal { background: var(--surface); border-radius: 20px; padding: 2rem; width: 100%; max-width: 400px; box-shadow: 0 8px 32px rgba(0,0,0,0.15); transform: translateY(12px); transition: transform 0.2s; }
+  .modal-overlay.open .modal { transform: translateY(0); }
+  .modal h3 { font-family: 'Lora', serif; font-size: 1.3rem; font-weight: 600; margin-bottom: 1.2rem; }
+  .form-group { margin-bottom: 1rem; }
+  .form-group label { display: block; font-size: 0.8rem; font-weight: 500; color: var(--muted); margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.04em; }
+  .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 10px 12px; border: 1px solid var(--border); border-radius: 10px; font-family: 'DM Sans', sans-serif; font-size: 0.9rem; background: var(--bg); color: var(--text); outline: none; transition: border-color 0.15s; }
+  .form-group input:focus, .form-group textarea:focus { border-color: var(--accent-f); }
+  .form-group textarea { resize: vertical; min-height: 60px; }
+  .who-selector { display: flex; gap: 8px; }
+  .who-opt { flex: 1; padding: 8px; border: 1.5px solid var(--border); border-radius: 10px; text-align: center; cursor: pointer; font-size: 0.8rem; font-weight: 500; transition: all 0.12s; }
+  .who-opt.active-f { border-color: var(--accent-f); background: var(--accent-f-light); color: var(--accent-f); }
+  .who-opt.active-w { border-color: var(--accent-w); background: var(--accent-w-light); color: var(--accent-w); }
+  .who-opt.active-b { border-color: var(--accent-both); background: var(--accent-both-light); color: var(--accent-both); }
+  .modal-actions { display: flex; gap: 10px; margin-top: 1.5rem; }
+  .btn { flex: 1; padding: 11px; border-radius: 10px; font-family: 'DM Sans', sans-serif; font-size: 0.9rem; font-weight: 500; cursor: pointer; border: none; transition: opacity 0.15s, transform 0.1s; }
+  .btn:active { transform: scale(0.98); }
+  .btn-cancel { background: var(--bg); color: var(--muted); border: 1px solid var(--border); }
+  .btn-save { background: var(--text); color: #fff; }
+  .btn-save:hover { opacity: 0.85; }
+  .btn-save:disabled { opacity: 0.5; cursor: not-allowed; }
+  .legend { display: flex; gap: 16px; padding: 0 1.5rem 0.5rem; flex-wrap: wrap; }
+  .legend-item { display: flex; align-items: center; gap: 6px; font-size: 0.75rem; color: var(--muted); }
+  .legend-dot { width: 8px; height: 8px; border-radius: 50%; }
+  .legend-dot.fernando { background: var(--accent-f); }
+  .legend-dot.esposa { background: var(--accent-w); }
+  .legend-dot.both { background: var(--accent-both); }
+  .empty-state { text-align: center; color: var(--muted); font-size: 0.85rem; padding: 1.5rem; font-style: italic; }
+  .toast { position: fixed; bottom: 5rem; left: 50%; transform: translateX(-50%) translateY(20px); background: var(--text); color: #fff; padding: 10px 20px; border-radius: 20px; font-size: 0.85rem; opacity: 0; transition: all 0.3s; z-index: 200; white-space: nowrap; pointer-events: none; }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+  .loading-overlay { position: fixed; inset: 0; background: rgba(250,248,244,0.85); z-index: 50; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; }
+  .spinner { width: 32px; height: 32px; border: 3px solid var(--border); border-top-color: var(--accent-f); border-radius: 50%; animation: spin 0.8s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .loading-text { font-size: 0.85rem; color: var(--muted); }
+</style>
+</head>
+<body>
+
+<div id="setup-screen">
+  <div class="setup-card">
+    <h1>Nuestro Calendario</h1>
+    <p>¿Quién eres?</p>
+    <button class="who-btn fernando" onclick="chooseUser('fernando','Fernando')">
+      <span class="who-name">Fernando</span>
+      <span class="who-role">Marido</span>
+    </button>
+    <button class="who-btn esposa" onclick="chooseUser('esposa','Mi mujer')">
+      <span class="who-name">Mi mujer</span>
+      <span class="who-role">Esposa</span>
+    </button>
+    <p style="margin-top:1rem;font-size:0.78rem;color:var(--muted);">Los eventos se guardan en vuestro Google Sheets compartido</p>
+  </div>
+</div>
+
+<div id="app">
+  <header>
+    <h1>Nuestro Calendario</h1>
+    <div style="display:flex;flex-direction:column;align-items:flex-end;gap:3px;">
+      <div class="user-badge">
+        <div class="user-dot" id="user-dot"></div>
+        <span id="user-label"></span>
+        <button onclick="logout()" style="background:none;border:none;cursor:pointer;font-size:0.75rem;color:var(--muted);padding:0 4px;">cambiar</button>
+      </div>
+      <div class="sync-info" id="sync-info">Cargando...</div>
+    </div>
+  </header>
+
+  <div class="cal-nav">
+    <button class="nav-btn" onclick="changeMonth(-1)">&#8592;</button>
+    <h2 id="month-title"></h2>
+    <button class="nav-btn" onclick="changeMonth(1)">&#8594;</button>
+  </div>
+
+  <div class="legend">
+    <div class="legend-item"><div class="legend-dot fernando"></div> Fernando</div>
+    <div class="legend-item"><div class="legend-dot esposa"></div> Mi mujer</div>
+    <div class="legend-item"><div class="legend-dot both"></div> Ambos</div>
+  </div>
+
+  <div class="weekdays">
+    <div class="weekday-label">lun</div><div class="weekday-label">mar</div>
+    <div class="weekday-label">mié</div><div class="weekday-label">jue</div>
+    <div class="weekday-label">vie</div><div class="weekday-label">sáb</div>
+    <div class="weekday-label">dom</div>
+  </div>
+
+  <div class="cal-grid" id="cal-grid"></div>
+
+  <div class="event-list-section">
+    <div class="section-title">Próximos eventos</div>
+    <div id="event-list"></div>
+  </div>
+</div>
+
+<button class="fab" id="fab-btn" onclick="openModal(null)" style="display:none;">+</button>
+
+<div class="modal-overlay" id="modal-overlay">
+  <div class="modal">
+    <h3 id="modal-title">Nuevo evento</h3>
+    <div class="form-group">
+      <label>Título</label>
+      <input type="text" id="ev-title" placeholder="¿Qué hay?" />
+    </div>
+    <div class="form-group">
+      <label>Fecha</label>
+      <input type="date" id="ev-date" />
+    </div>
+    <div class="form-group">
+      <label>Hora (opcional)</label>
+      <input type="time" id="ev-time" />
+    </div>
+    <div class="form-group">
+      <label>¿Para quién?</label>
+      <div class="who-selector">
+        <div class="who-opt" id="opt-f" onclick="selectWho('fernando')">Fernando</div>
+        <div class="who-opt" id="opt-w" onclick="selectWho('esposa')">Mi mujer</div>
+        <div class="who-opt" id="opt-b" onclick="selectWho('both')">Ambos</div>
+      </div>
+    </div>
+    <div class="form-group">
+      <label>Nota (opcional)</label>
+      <textarea id="ev-note" placeholder="Detalles..."></textarea>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-cancel" onclick="closeModal()">Cancelar</button>
+      <button class="btn btn-save" id="btn-save" onclick="saveEvent()">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzXBbJ7Fv4Acec7nwWsHEKkjCjA04z2Pwfy9f7RnYmIsM82aUfvgK8DE4-ybsQrIfbK/exec';
+const MONTHS_ES = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+
+let currentUser = null, currentUserName = null;
+let events = [];
+let viewYear = new Date().getFullYear(), viewMonth = new Date().getMonth();
+let editingId = null, selectedWho = null, syncInterval = null;
+
+function showToast(msg, duration=2500) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), duration);
+}
+
+function showLoading(msg='Guardando...') {
+  let el = document.getElementById('loading-overlay');
+  if (!el) {
+    el = document.createElement('div');
+    el.id = 'loading-overlay'; el.className = 'loading-overlay';
+    el.innerHTML = `<div class="spinner"></div><div class="loading-text">${msg}</div>`;
+    document.body.appendChild(el);
+  } else {
+    el.querySelector('.loading-text').textContent = msg;
+    el.style.display = 'flex';
+  }
+}
+
+function hideLoading() {
+  const el = document.getElementById('loading-overlay');
+  if (el) el.style.display = 'none';
+}
+
+function chooseUser(key, name) {
+  currentUser = key; currentUserName = name;
+  localStorage.setItem('cal-user', key);
+  localStorage.setItem('cal-user-name', name);
+  document.getElementById('setup-screen').style.display = 'none';
+  document.getElementById('app').style.display = 'block';
+  document.getElementById('fab-btn').style.display = 'flex';
+  document.getElementById('user-label').textContent = name;
+  document.getElementById('user-dot').style.background = key === 'fernando' ? 'var(--accent-f)' : 'var(--accent-w)';
+  loadEvents();
+  syncInterval = setInterval(loadEvents, 30000);
+}
+
+function logout() {
+  clearInterval(syncInterval);
+  currentUser = null;
+  localStorage.removeItem('cal-user');
+  localStorage.removeItem('cal-user-name');
+  document.getElementById('setup-screen').style.display = 'flex';
+  document.getElementById('app').style.display = 'none';
+  document.getElementById('fab-btn').style.display = 'none';
+}
+
+async function loadEvents() {
+  try {
+    const res = await fetch(SCRIPT_URL + '?action=get');
+    const data = await res.json();
+    events = Array.isArray(data) ? data.filter(e => e.id) : [];
+    renderCalendar();
+    renderEventList();
+    document.getElementById('sync-info').textContent = 'Sincronizado ' + new Date().toLocaleTimeString('es-ES', {hour:'2-digit',minute:'2-digit'});
+  } catch(e) {
+    document.getElementById('sync-info').textContent = 'Sin conexión';
+    showToast('⚠️ No se pudo conectar con Google Sheets');
+  }
+}
+
+async function pushEvents() {
+  const res = await fetch(SCRIPT_URL, {
+    method: 'POST',
+    body: JSON.stringify({ action: 'save', events })
+  });
+  const text = await res.text();
+  if (text !== 'ok') throw new Error('Error guardando');
+}
+
+function changeMonth(delta) {
+  viewMonth += delta;
+  if (viewMonth > 11) { viewMonth = 0; viewYear++; }
+  if (viewMonth < 0) { viewMonth = 11; viewYear--; }
+  renderCalendar(); renderEventList();
+}
+
+function renderCalendar() {
+  document.getElementById('month-title').textContent = MONTHS_ES[viewMonth] + ' ' + viewYear;
+  const grid = document.getElementById('cal-grid');
+  grid.innerHTML = '';
+  const firstDay = new Date(viewYear, viewMonth, 1);
+  let startDow = firstDay.getDay();
+  startDow = startDow === 0 ? 6 : startDow - 1;
+  const daysInMonth = new Date(viewYear, viewMonth + 1, 0).getDate();
+  const daysInPrev = new Date(viewYear, viewMonth, 0).getDate();
+  const today = new Date();
+  const totalCells = Math.ceil((startDow + daysInMonth) / 7) * 7;
+
+  for (let i = 0; i < totalCells; i++) {
+    const cell = document.createElement('div');
+    cell.className = 'cal-day';
+    let dayNum, month, year, isOther = false;
+    if (i < startDow) {
+      dayNum = daysInPrev - startDow + i + 1; month = viewMonth - 1; year = viewYear;
+      if (month < 0) { month = 11; year--; } isOther = true;
+    } else if (i >= startDow + daysInMonth) {
+      dayNum = i - startDow - daysInMonth + 1; month = viewMonth + 1; year = viewYear;
+      if (month > 11) { month = 0; year++; } isOther = true;
+    } else { dayNum = i - startDow + 1; month = viewMonth; year = viewYear; }
+
+    if (isOther) cell.classList.add('other-month');
+    const isToday = dayNum === today.getDate() && month === today.getMonth() && year === today.getFullYear();
+    if (isToday) cell.classList.add('today');
+    const dateStr = `${year}-${String(month+1).padStart(2,'0')}-${String(dayNum).padStart(2,'0')}`;
+
+    const numSpan = document.createElement('span');
+    numSpan.className = 'day-num'; numSpan.textContent = dayNum;
+    cell.appendChild(numSpan);
+
+    const dayEvents = events.filter(e => e.date === dateStr).sort((a,b) => (a.time||'').localeCompare(b.time||''));
+    dayEvents.slice(0,2).forEach(ev => {
+      const pill = document.createElement('span');
+      pill.className = `event-pill ${ev.who}`;
+      pill.textContent = (ev.time ? ev.time.substring(0,5) + ' ' : '') + ev.title;
+      pill.onclick = (e) => { e.stopPropagation(); openEditModal(ev); };
+      cell.appendChild(pill);
+    });
+    if (dayEvents.length > 2) {
+      const more = document.createElement('span');
+      more.className = 'more-events'; more.textContent = `+${dayEvents.length - 2} más`;
+      cell.appendChild(more);
+    }
+    cell.addEventListener('click', () => openModal(dateStr));
+    grid.appendChild(cell);
+  }
+}
+
+function renderEventList() {
+  const list = document.getElementById('event-list');
+  list.innerHTML = '';
+  const today = new Date().toISOString().split('T')[0];
+  const upcoming = events.filter(e => e.date >= today)
+    .sort((a,b) => a.date.localeCompare(b.date) || (a.time||'').localeCompare(b.time||''))
+    .slice(0, 10);
+
+  if (upcoming.length === 0) {
+    list.innerHTML = '<div class="empty-state">No hay eventos próximos. ¡Añade uno!</div>';
+    return;
+  }
+  upcoming.forEach(ev => {
+    const item = document.createElement('div'); item.className = 'event-item';
+    const bar = document.createElement('div'); bar.className = `event-color-bar ${ev.who}`;
+    const info = document.createElement('div'); info.className = 'event-info';
+    const [y,m,d] = ev.date.split('-');
+    const dateLabel = `${d} de ${MONTHS_ES[parseInt(m)-1]}`;
+    const timeLabel = ev.time ? ` · ${ev.time.substring(0,5)}` : '';
+    const whoLabel = ev.who === 'both' ? 'Ambos' : (ev.who === 'fernando' ? 'Fernando' : 'Mi mujer');
+    info.innerHTML = `<div class="event-title-text">${ev.title}</div>
+      <div class="event-meta">${dateLabel}${timeLabel} · ${whoLabel}${ev.note ? ' · ' + ev.note : ''}</div>`;
+    const actions = document.createElement('div'); actions.className = 'event-actions';
+    const editBtn = document.createElement('button');
+    editBtn.className = 'icon-btn'; editBtn.textContent = '✏️'; editBtn.onclick = () => openEditModal(ev);
+    const delBtn = document.createElement('button');
+    delBtn.className = 'icon-btn del'; delBtn.textContent = '🗑️'; delBtn.onclick = () => deleteEvent(ev.id);
+    actions.appendChild(editBtn); actions.appendChild(delBtn);
+    item.appendChild(bar); item.appendChild(info); item.appendChild(actions);
+    list.appendChild(item);
+  });
+}
+
+function openModal(dateStr) {
+  editingId = null;
+  document.getElementById('modal-title').textContent = 'Nuevo evento';
+  document.getElementById('ev-title').value = '';
+  document.getElementById('ev-date').value = dateStr || new Date().toISOString().split('T')[0];
+  document.getElementById('ev-time').value = '';
+  document.getElementById('ev-note').value = '';
+  selectWho(currentUser || 'both');
+  document.getElementById('modal-overlay').classList.add('open');
+  setTimeout(() => document.getElementById('ev-title').focus(), 200);
+}
+
+function openEditModal(ev) {
+  editingId = ev.id;
+  document.getElementById('modal-title').textContent = 'Editar evento';
+  document.getElementById('ev-title').value = ev.title;
+  document.getElementById('ev-date').value = ev.date;
+  document.getElementById('ev-time').value = ev.time || '';
+  document.getElementById('ev-note').value = ev.note || '';
+  selectWho(ev.who);
+  document.getElementById('modal-overlay').classList.add('open');
+}
+
+function closeModal() {
+  document.getElementById('modal-overlay').classList.remove('open');
+  editingId = null;
+}
+
+document.getElementById('modal-overlay').addEventListener('click', function(e) {
+  if (e.target === this) closeModal();
+});
+
+function selectWho(who) {
+  selectedWho = who;
+  document.getElementById('opt-f').className = 'who-opt' + (who === 'fernando' ? ' active-f' : '');
+  document.getElementById('opt-w').className = 'who-opt' + (who === 'esposa' ? ' active-w' : '');
+  document.getElementById('opt-b').className = 'who-opt' + (who === 'both' ? ' active-b' : '');
+}
+
+async function saveEvent() {
+  const title = document.getElementById('ev-title').value.trim();
+  const date = document.getElementById('ev-date').value;
+  if (!title || !date) { showToast('⚠️ Pon al menos título y fecha'); return; }
+  const time = document.getElementById('ev-time').value;
+  const note = document.getElementById('ev-note').value.trim();
+  const who = selectedWho || currentUser || 'both';
+  const saveBtn = document.getElementById('btn-save');
+  saveBtn.disabled = true; saveBtn.textContent = 'Guardando...';
+
+  if (editingId) {
+    const idx = events.findIndex(e => e.id === editingId);
+    if (idx !== -1) events[idx] = { ...events[idx], title, date, time, note, who };
+  } else {
+    events.push({ id: Date.now().toString(36) + Math.random().toString(36).slice(2), title, date, time, note, who, createdBy: currentUser });
+  }
+
+  try {
+    showLoading('Guardando en Google Sheets...');
+    await pushEvents();
+    closeModal();
+    renderCalendar(); renderEventList();
+    showToast('✅ Evento guardado');
+    document.getElementById('sync-info').textContent = 'Guardado ' + new Date().toLocaleTimeString('es-ES', {hour:'2-digit',minute:'2-digit'});
+  } catch(e) {
+    showToast('❌ Error al guardar. Inténtalo de nuevo.');
+  } finally {
+    hideLoading();
+    saveBtn.disabled = false; saveBtn.textContent = 'Guardar';
+  }
+}
+
+async function deleteEvent(id) {
+  if (!confirm('¿Eliminar este evento?')) return;
+  events = events.filter(e => e.id !== id);
+  try {
+    showLoading('Eliminando...');
+    await pushEvents();
+    renderCalendar(); renderEventList();
+    showToast('🗑️ Evento eliminado');
+  } catch(e) {
+    showToast('❌ Error al eliminar');
+    await loadEvents();
+  } finally { hideLoading(); }
+}
+
+(function() {
+  const savedUser = localStorage.getItem('cal-user');
+  const savedName = localStorage.getItem('cal-user-name');
+  if (savedUser && savedName) chooseUser(savedUser, savedName);
+})();
+</script>
+</body>
+</html>
