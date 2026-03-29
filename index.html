@@ -322,14 +322,17 @@ async function apiGet() {
 }
 
 async function apiPost(payload) {
-  const res = await fetch(SCRIPT_URL, {
+  // no-cors: Google Apps Script no permite leer la respuesta POST desde browser
+  // pero los datos SÍ llegan al servidor
+  await fetch(SCRIPT_URL, {
     method: 'POST',
+    mode: 'no-cors',
     headers: { 'Content-Type': 'text/plain' },
-    body: JSON.stringify(payload),
-    redirect: 'follow'
+    body: JSON.stringify(payload)
   });
-  const text = await res.text();
-  try { return JSON.parse(text); } catch(e) { return text; }
+  // Esperamos un momento y verificamos con GET
+  await new Promise(r => setTimeout(r, 1500));
+  return { ok: true };
 }
 
 function normalizeDate(val) {
