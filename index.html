@@ -256,7 +256,7 @@
 <div class="toast" id="toast"></div>
 
 <script>
-const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzhNXWjJFJmtxCcPS1Mix76gt0VkF1LG2x4KgdzbwEtjSXpO0Zkn5SzWFEillRRaAwI/exec';
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbx4U4p3nQ3BWcyjTJOff92VqVkTy-Q1OuUO3Q_eyL9zysOPoqUDR1weagoooe6Gvyui/exec';
 const MONTHS_ES = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
 
 let currentUser = null, currentUserName = null;
@@ -314,12 +314,20 @@ function logout() {
   document.getElementById('fab-btn').style.display = 'none';
 }
 
-// --- API via fetch ---
-async function apiCall(params) {
-  const query = Object.entries(params)
-    .map(([k,v]) => k + '=' + encodeURIComponent(v)).join('&');
-  const url = SCRIPT_URL + '?' + query;
-  const res = await fetch(url, { redirect: 'follow' });
+// --- API: GET para leer, POST para guardar ---
+async function apiGet() {
+  const res = await fetch(SCRIPT_URL + '?action=get', { redirect: 'follow' });
+  const text = await res.text();
+  try { return JSON.parse(text); } catch(e) { throw new Error('Respuesta invalida'); }
+}
+
+async function apiPost(payload) {
+  const res = await fetch(SCRIPT_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'text/plain' },
+    body: JSON.stringify(payload),
+    redirect: 'follow'
+  });
   const text = await res.text();
   try { return JSON.parse(text); } catch(e) { return text; }
 }
@@ -355,7 +363,7 @@ function normalizeTime(val) {
 
 async function loadEvents() {
   try {
-    const data = await apiCall({ action: "get" });
+    const data = await apiGet();
     events = Array.isArray(data) ? data.filter(e => e.id).map(e => ({
       ...e,
       date: normalizeDate(String(e.date || '')),
@@ -371,8 +379,8 @@ async function loadEvents() {
 }
 
 async function pushEvents() {
-  const data = encodeURIComponent(JSON.stringify(events));
-  await apiCall({ action: "save", data });
+  const result = await apiPost({ events: events });
+  if (result && result.error) throw new Error(result.error);
 }
 
 // --- Calendar ---
