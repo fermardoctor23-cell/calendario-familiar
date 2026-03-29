@@ -256,7 +256,7 @@
 <div class="toast" id="toast"></div>
 
 <script>
-const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyNhY6Q5bjDrT9Lgmow26QVpnAtS78eGqPkFJAArmkarvc50DSF2Mvqf8YNmhlnyCBC/exec';
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyZazYXgk8NJlq2vDzSdnF8GmdWoZBWWdN9ZnhnkoE0lGb4OQV2c-Dk3rYO3o34Ctih/exec';
 const MONTHS_ES = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
 
 let currentUser = null, currentUserName = null;
@@ -338,13 +338,42 @@ function jsonpCall(params) {
   });
 }
 
+function normalizeDate(val) {
+  if (!val || val === 'undefined') return '';
+  if (/^\d{4}-\d{2}-\d{2}$/.test(val)) return val;
+  if (val.includes('T')) {
+    const utcStr = val.substring(0, 10);
+    const hour = parseInt(val.substring(11, 13));
+    if (hour >= 22) {
+      const d = new Date(utcStr + 'T12:00:00');
+      d.setDate(d.getDate() + 1);
+      const y = d.getFullYear();
+      const m = String(d.getMonth()+1).padStart(2,'0');
+      const day = String(d.getDate()).padStart(2,'0');
+      return y+'-'+m+'-'+day;
+    }
+    return utcStr;
+  }
+  return val.substring(0, 10);
+}
+
+function normalizeTime(val) {
+  if (!val || val === 'undefined') return '';
+  if (/^\d{2}:\d{2}/.test(val)) return val.substring(0, 5);
+  if (val.includes('T')) {
+    const match = val.match(/T(\d{2}):(\d{2})/);
+    if (match) return match[1] + ':' + match[2];
+  }
+  return '';
+}
+
 async function loadEvents() {
   try {
     const data = await jsonpCall({ action: 'get' });
     events = Array.isArray(data) ? data.filter(e => e.id).map(e => ({
       ...e,
-      date: e.date ? String(e.date).substring(0, 10) : '',
-      time: e.time && String(e.time).includes('T') ? '' : (e.time || '')
+      date: normalizeDate(String(e.date || '')),
+      time: normalizeTime(String(e.time || ''))
     })) : [];
     renderCalendar();
     renderEventList();
