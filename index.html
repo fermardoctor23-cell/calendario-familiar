@@ -341,7 +341,11 @@ function jsonpCall(params) {
 async function loadEvents() {
   try {
     const data = await jsonpCall({ action: 'get' });
-    events = Array.isArray(data) ? data.filter(e => e.id) : [];
+    events = Array.isArray(data) ? data.filter(e => e.id).map(e => ({
+      ...e,
+      date: e.date ? String(e.date).substring(0, 10) : '',
+      time: e.time && String(e.time).includes('T') ? '' : (e.time || '')
+    })) : [];
     renderCalendar();
     renderEventList();
     document.getElementById('sync-info').textContent = 'Sincronizado ' + new Date().toLocaleTimeString('es-ES', {hour:'2-digit',minute:'2-digit'});
