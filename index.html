@@ -309,9 +309,19 @@ function logout(){
 
 // --- API ---
 async function apiGet(){
-  const r=await fetch(SCRIPT_URL+'?action=get',{redirect:'follow'});
-  const t=await r.text();
-  try{return JSON.parse(t);}catch(e){throw new Error('Bad response');}
+  const r = await fetch(`${SCRIPT_URL}?action=get`, { redirect: 'follow' });
+  const t = await r.text();
+  let data;
+  try {
+    data = JSON.parse(t);
+  } catch (e) {
+    throw new Error('Respuesta JSON no válida');
+  }
+
+  if (Array.isArray(data)) return data;
+  if (data && Array.isArray(data.events)) return data.events;
+  if (data && data.error) throw new Error(data.error);
+  return [];
 }
 async function apiPost(payload){
   await fetch(SCRIPT_URL,{method:'POST',mode:'no-cors',headers:{'Content-Type':'text/plain'},body:JSON.stringify(payload)});
@@ -554,25 +564,68 @@ function handleIcs(evt){
   r.readAsText(f);evt.target.value='';
 }
 function parseICS(txt){
-  const evs=[];const lines=txt.replace(/
-/g,'
-').replace(/
-/g,'
-').replace(/
-[ 	]/g,'').split('
-');
-  let cur=null;
-  for(const l of lines){
-    if(l==='BEGIN:VEVENT'){cur={};continue;}
-    if(l==='END:VEVENT'&&cur){if(cur.date&&cur.title)evs.push(cur);cur=null;continue;}
-    if(!cur)continue;
-    if(l.startsWith('SUMMARY'))cur.title=l.replace(/^SUMMARY[^:]*:/,'').trim();
-    else if(l.startsWith('DTSTART')){cur.date=icsDate(l.replace(/^DTSTART[^:]*:/,'').trim());cur.time=icsTime(l.replace(/^DTSTART[^:]*:/,'').trim());}
-    else if(l.startsWith('DTEND'))cur.enddate=icsDate(l.replace(/^DTEND[^:]*:/,'').trim());
-    else if(l.startsWith('DESCRIPTION'))cur.note=l.replace(/^DESCRIPTION[^:]*:/,'').replace(/\n/g,' ').trim();
+  const evs = [];
+  const normalized = txt
+    .replace(/\r\n/g, '\n')
+    .replace(/\r/g, '\n')
+    .replace(/\n[ \t]/g, ''); // unfolded lines
+
+  const lines = normalized.split('\n');
+  let cur = null;
+
+  for (const rawLine of lines) {
+    const l = rawLine.trim();
+    if (!l) continue;
+
+    if (l === 'BEGIN:VEVENT') {
+      cur = {};
+      continue;
+    }
+
+    if (l === 'END:VEVENT' && cur) {
+      if (cur.date && cur.title) {
+        if (cur.enddate && !cur.time) {
+          const start = new Date(`${cur.date}T12:00:00`);
+          const end = new Date(`${cur.enddate}T12:00:00`);
+          const diffDays = Math.round((end - start) / 86400000);
+          if (diffDays >= 1) {
+            end.setDate(end.getDate() - 1);
+            cur.enddate = `${end.getFullYear()}-${String(end.getMonth() + 1).padStart(2, '0')}-${String(end.getDate()).padStart(2, '0')}`;
+          }
+        }
+        evs.push(cur);
+      }
+      cur = null;
+      continue;
+    }
+
+    if (!cur) continue;
+
+    if (l.startsWith('SUMMARY')) {
+      cur.title = decodeIcsText(l.replace(/^SUMMARY[^:]*:/, '').trim());
+    } else if (l.startsWith('DTSTART')) {
+      const value = l.replace(/^DTSTART[^:]*:/, '').trim();
+      cur.date = icsDate(value);
+      cur.time = icsTime(value);
+    } else if (l.startsWith('DTEND')) {
+      const value = l.replace(/^DTEND[^:]*:/, '').trim();
+      cur.enddate = icsDate(value);
+    } else if (l.startsWith('DESCRIPTION')) {
+      cur.note = decodeIcsText(l.replace(/^DESCRIPTION[^:]*:/, '').trim()).replace(/\\n/g, ' ');
+    }
   }
+
   return evs;
 }
+
+function decodeIcsText(s){
+  return String(s || '')
+    .replace(/\\,/g, ',')
+    .replace(/\\;/g, ';')
+    .replace(/\\n/g, ' ')
+    .trim();
+}
+
 function icsDate(v){const c=v.replace(/Z$/,'').split('T')[0];if(c.length>=8)return c.substring(0,4)+'-'+c.substring(4,6)+'-'+c.substring(6,8);return null;}
 function icsTime(v){if(!v.includes('T'))return'';const t=v.replace(/Z$/,'').split('T')[1];if(t&&t.length>=4)return t.substring(0,2)+':'+t.substring(2,4);return'';}
 
