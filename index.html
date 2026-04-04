@@ -177,10 +177,10 @@
 
     .day {
       position: relative;
-      min-height: 148px;
+      min-height: 120px;
       border: 1px solid var(--line);
-      border-radius: 16px;
-      padding: 10px 8px 8px;
+      border-radius: 12px;
+      padding: 6px 5px 5px;
       overflow: hidden;
       background: #fff;
       cursor: pointer;
@@ -199,47 +199,53 @@
     }
 
     .day-num {
-      font-size: 1rem;
+      font-size: 0.92rem;
       font-weight: 800;
-      margin-bottom: 8px;
-      padding-right: 24px;
+      margin-bottom: 5px;
+      padding-right: 18px;
     }
 
     .corner-icon {
       position: absolute;
       top: 6px;
       right: 7px;
-      font-size: 0.95rem;
+      font-size: 0.9rem;
       line-height: 1;
-      opacity: .85;
+      opacity: .88;
       pointer-events: none;
+      display: none;
+    }
+
+    .corner-icon.has-icon {
+      display: block;
     }
 
     .events-stack {
       display: flex;
       flex-direction: column;
-      gap: 5px;
+      gap: 3px;
     }
 
     .event-pill {
-      border-radius: 10px;
-      padding: 6px 8px;
-      font-size: 0.82rem;
-      line-height: 1.15;
+      border-radius: 8px;
+      padding: 4px 6px;
+      font-size: 0.76rem;
+      line-height: 1.08;
       font-weight: 700;
       border: 1px solid rgba(0,0,0,.05);
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
       box-shadow: 0 1px 2px rgba(0,0,0,.04);
+      min-height: 24px;
     }
 
     .event-pill small {
       display: block;
-      font-size: 0.72rem;
+      font-size: 0.64rem;
       font-weight: 600;
       opacity: .82;
-      margin-top: 2px;
+      margin-top: 1px;
     }
 
     .owner-fernando { background: var(--fernando); }
@@ -406,33 +412,53 @@
     }
 
     @media (max-width: 760px) {
-      .app { padding: 8px; }
-      .topbar { padding: 12px; }
-      .title-wrap h1 { font-size: 1.15rem; }
-      .subtitle { font-size: .84rem; }
-      .toolbar { width: 100%; }
-      .month-title { font-size: 1.05rem; }
-      .weekday { font-size: .72rem; }
-      .weekday-row, .month-grid { gap: 6px; }
-      .day {
-        min-height: 100px;
-        padding: 8px 6px 6px;
-        border-radius: 14px;
+      .app { padding: 6px; }
+      .topbar { padding: 10px; gap: 10px; }
+      .title-wrap h1 { font-size: 1.05rem; }
+      .subtitle { font-size: .78rem; }
+      .toolbar { width: 100%; gap: 6px; }
+      .who-chip, .view-chip, .btn-primary, .btn-soft {
+        padding: 8px 10px;
+        font-size: .83rem;
       }
-      .day-num { font-size: .92rem; margin-bottom: 6px; }
+      .month-title { font-size: 1rem; }
+      .calendar-shell { padding: 8px; }
+      .legend { font-size: .7rem; gap: 6px; margin-bottom: 8px; }
+      .weekday-row, .month-grid { gap: 4px; }
+      .weekday {
+        font-size: .68rem;
+        letter-spacing: 0;
+      }
+      .day {
+        min-height: 92px;
+        padding: 5px 4px 4px;
+        border-radius: 10px;
+      }
+      .day-num {
+        font-size: .84rem;
+        margin-bottom: 4px;
+        padding-right: 14px;
+      }
+      .corner-icon {
+        font-size: .72rem;
+        top: 4px;
+        right: 4px;
+      }
       .event-pill {
-        padding: 4px 6px;
-        font-size: .69rem;
-        border-radius: 8px;
+        padding: 3px 5px;
+        font-size: .66rem;
+        border-radius: 7px;
+        min-height: 20px;
       }
       .event-pill small {
-        font-size: .62rem;
-        margin-top: 1px;
+        font-size: .58rem;
+        margin-top: 0;
       }
-      .corner-icon { font-size: .82rem; top: 5px; right: 5px; }
+      .more-pill {
+        font-size: .62rem;
+      }
       .form-grid { grid-template-columns: 1fr; }
       .modal { border-radius: 20px 20px 0 0; padding: 14px; }
-      .legend { font-size: .74rem; gap: 8px; }
     }
   </style>
 </head>
@@ -535,16 +561,16 @@
         <div class="field">
           <label for="eventType">Tipo</label>
           <select id="eventType">
-            <option value="normal">Normal</option>
-            <option value="guardia_hcuv">Guardia HCUV</option>
-            <option value="guardia_malvarrosa">Guardia Malvarrosa</option>
-            <option value="cumpleanos">Cumpleaños</option>
-            <option value="comida">Comida</option>
-            <option value="viaje">Viaje</option>
-            <option value="reunion">Reunión</option>
-            <option value="congreso">Congreso</option>
-            <option value="vacaciones">Vacaciones</option>
-            <option value="medico">Médico</option>
+            <option value="normal">Sin icono</option>
+            <option value="guardia_hcuv">🏥 Guardia HCUV</option>
+            <option value="guardia_malvarrosa">🚑 Guardia Malvarrosa</option>
+            <option value="cumpleanos">🎂 Cumpleaños</option>
+            <option value="comida">🍽️ Comida</option>
+            <option value="viaje">✈️ Viaje</option>
+            <option value="reunion">👥 Reunión</option>
+            <option value="congreso">🎓 Congreso</option>
+            <option value="vacaciones">🏖️ Vacaciones</option>
+            <option value="medico">🩺 Médico</option>
           </select>
         </div>
 
@@ -583,7 +609,7 @@
     const weekNames = ['Lunes','Martes','Miércoles','Jueves','Viernes','Sábado','Domingo'];
 
     const typeIcons = {
-      normal: '•',
+      normal: '',
       guardia_hcuv: '🏥',
       guardia_malvarrosa: '🚑',
       cumpleanos: '🎂',
@@ -671,7 +697,7 @@
       return 'owner-default';
     }
 
-    function iconFor(event) { return typeIcons[event.type] || typeIcons.normal; }
+    function iconFor(event) { return typeIcons[event.type] || ''; }
 
     function formatMonthTitle(date) {
       if (state.currentView === 'month') return `${monthNames[date.getMonth()]} ${date.getFullYear()}`;
@@ -737,7 +763,7 @@
           enddate: normalizeDate(ev.enddate || ev.date || ''),
           time: normalizeTime(ev.time),
           who: (ev.who || 'fernando').toLowerCase(),
-          type: ev.type || inferType(ev.title || '')
+          type: ev.type || 'normal'
         }));
         render();
         if (showMessage) setStatus('Sincronizado.');
@@ -782,16 +808,6 @@
     }
 
     function inferType(title) {
-      const t = String(title || '').toLowerCase();
-      if (t.includes('malvarrosa')) return 'guardia_malvarrosa';
-      if (t.includes('guardia')) return 'guardia_hcuv';
-      if (t.includes('cumple')) return 'cumpleanos';
-      if (t.includes('comida') || t.includes('cena')) return 'comida';
-      if (t.includes('vuelo') || t.includes('viaje') || t.includes('frankfurt') || t.includes('amsterdam')) return 'viaje';
-      if (t.includes('reun') || t.includes('meeting') || t.includes('tutoría') || t.includes('tutoria')) return 'reunion';
-      if (t.includes('congreso') || t.includes('svmin') || t.includes('esh')) return 'congreso';
-      if (t.includes('vacaciones')) return 'vacaciones';
-      if (t.includes('médico') || t.includes('medico') || t.includes('consulta')) return 'medico';
       return 'normal';
     }
 
@@ -827,7 +843,7 @@
         if (weekday === 0) day.classList.add('sun');
         if (ymd === todayYmd) day.classList.add('today');
 
-        const topIcon = items[0] ? `<div class="corner-icon">${iconFor(items[0])}</div>` : '';
+        const topIcon = (items[0] && iconFor(items[0])) ? `<div class="corner-icon has-icon">${iconFor(items[0])}</div>` : '';
         const shown = items.slice(0, maxItems).map(ev => {
           const sub = summarizeEvent(ev, ymd);
           return `<div class="event-pill ${ownerClass(ev.who)}" data-id="${escapeHtml(ev.id)}">${escapeHtml(ev.title)}${sub ? `<small>${escapeHtml(sub)}</small>` : ''}</div>`;
@@ -857,7 +873,7 @@
         if (date.getDay() === 0) col.classList.add('sun');
         const eventsHtml = items.length ? items.map(ev => {
           const sub = summarizeEvent(ev, ymd);
-          return `<div class="week-event ${ownerClass(ev.who)}" data-id="${escapeHtml(ev.id)}"><div class="event-corner">${iconFor(ev)}</div>${escapeHtml(ev.title)}<div class="event-meta">${escapeHtml(sub || ownerLabel(ev.who))}</div></div>`;
+          return `<div class="week-event ${ownerClass(ev.who)}" data-id="${escapeHtml(ev.id)}">${iconFor(ev) ? `<div class="event-corner">${iconFor(ev)}</div>` : ''}${escapeHtml(ev.title)}<div class="event-meta">${escapeHtml(sub || ownerLabel(ev.who))}</div></div>`;
         }).join('') : '<div class="empty-state">Sin eventos</div>';
         col.innerHTML = `<div class="week-head"><div>${weekNames[i]}</div><div class="week-date">${date.getDate()}/${date.getMonth()+1}</div></div><div class="week-events">${eventsHtml}</div>`;
         col.addEventListener('click', (e) => {
@@ -877,7 +893,7 @@
         if (normalizeTime(ev.time)) meta.push(normalizeTime(ev.time));
         meta.push(ownerLabel(ev.who));
         if (ev.enddate && ev.enddate !== ev.date) meta.push(`${ev.date} → ${ev.enddate}`);
-        return `<div class="day-event ${ownerClass(ev.who)}" data-id="${escapeHtml(ev.id)}"><div class="event-corner">${iconFor(ev)}</div>${escapeHtml(ev.title)}<div class="event-meta">${escapeHtml(meta.join(' · '))}</div>${ev.note ? `<div class="event-meta">${escapeHtml(ev.note)}</div>` : ''}</div>`;
+        return `<div class="day-event ${ownerClass(ev.who)}" data-id="${escapeHtml(ev.id)}">${iconFor(ev) ? `<div class="event-corner">${iconFor(ev)}</div>` : ''}${escapeHtml(ev.title)}<div class="event-meta">${escapeHtml(meta.join(' · '))}</div>${ev.note ? `<div class="event-meta">${escapeHtml(ev.note)}</div>` : ''}</div>`;
       }).join('') : '<div class="empty-state">Sin eventos este día</div>';
 
       els.dayPanel.innerHTML = `<div class="week-head"><div>${weekNames[(state.currentDate.getDay()+6)%7]}</div><div class="week-date">${state.currentDate.getDate()} ${monthNames[state.currentDate.getMonth()]} ${state.currentDate.getFullYear()}</div></div><div class="day-events">${eventsHtml}</div>`;
