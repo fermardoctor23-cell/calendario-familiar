@@ -164,10 +164,14 @@
       display: inline-block;
     }
 
-    .weekday-row, .month-grid {
+    .weekday-row {
       display: grid;
       grid-template-columns: repeat(7, minmax(0, 1fr));
       gap: 8px;
+    }
+
+    .month-grid {
+      display: block;
     }
 
     .weekday-row { margin-bottom: 8px; }
@@ -205,18 +209,54 @@
       background: #f0ddff !important;
       border-color: #b57aff !important;
     }
-      position: relative;
-      width: 100%;
-      aspect-ratio: 1 / 1;
-      min-height: 0;
-      border: 1px solid var(--line);
-      border-radius: 12px;
-      padding: 4px 4px 4px;
-      overflow: hidden;
-      background: #fff;
-      cursor: pointer;
+
+    .month-week {
       display: flex;
       flex-direction: column;
+      gap: 4px;
+      margin-bottom: 6px;
+    }
+
+    .week-days-row {
+      display: grid;
+      grid-template-columns: repeat(7, minmax(0, 1fr));
+      gap: 8px;
+    }
+
+    .week-bars {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+      margin-top: -2px;
+      margin-bottom: 2px;
+    }
+
+    .week-bar-row {
+      display: grid;
+      grid-template-columns: repeat(7, minmax(0, 1fr));
+      gap: 8px;
+      min-height: 22px;
+      align-items: stretch;
+      pointer-events: none;
+    }
+
+    .month-bar-event {
+      min-height: 22px;
+      border-radius: 7px;
+      padding: 3px 7px;
+      font-size: 0.68rem;
+      line-height: 1.15;
+      font-weight: 800;
+      border: 1px solid rgba(0,0,0,.06);
+      box-shadow: 0 1px 2px rgba(0,0,0,.05);
+      overflow: hidden;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+      pointer-events: auto;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      z-index: 2;
     }
 
     .day.other-month {
@@ -469,7 +509,11 @@
         gap: 6px;
         margin-bottom: 4px;
       }
-      body.landscape-mobile .weekday-row, body.landscape-mobile .month-grid {
+      body.landscape-mobile .weekday-row {
+        gap: 1px;
+      }
+      body.landscape-mobile .week-days-row,
+      body.landscape-mobile .week-bar-row {
         gap: 1px;
       }
       body.landscape-mobile .day {
@@ -566,7 +610,10 @@
         gap: 5px;
         margin-bottom: 6px;
       }
-      .weekday-row, .month-grid { gap: 3px; }
+      .weekday-row { gap: 3px; }
+      .week-days-row, .week-bar-row { gap: 3px; }
+      .month-week { gap: 3px; margin-bottom: 4px; }
+      .month-bar-event { min-height: 18px; font-size: .56rem; padding: 2px 4px; border-radius: 5px; }
       .weekday {
         font-size: .6rem;
         letter-spacing: 0;
@@ -1108,7 +1155,10 @@ function renderMonth() {
         bar.className = `month-bar-event ${color}`;
         bar.style.gridColumn = `${seg.startCol + 1} / ${seg.endCol + 2}`;
 
-        bar.textContent = compactTitle(ev.title, 18);
+        const icon = iconFor(ev);
+        const leftArrow = seg.continuesLeft ? '‹ ' : '';
+        const rightArrow = seg.continuesRight ? ' ›' : '';
+        bar.textContent = `${leftArrow}${icon ? icon + ' ' : ''}${compactTitle(ev.title, 18)}${rightArrow}`.trim();
 
         bar.onclick = (e) => {
           e.stopPropagation();
