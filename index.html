@@ -919,14 +919,14 @@
         const res = await fetch(`${SCRIPT_URL}${SCRIPT_URL.includes('?') ? '&' : '?'}t=${Date.now()}`, { cache: 'no-store' });
         const data = await res.json();
         const rawEvents = Array.isArray(data) ? data : (data.events || []);
-        state.events = rawEvents.map(ev => ({
-          ...ev,
-          date: normalizeDate(ev.date),
-          enddate: normalizeDate(ev.enddate || ev.date || ''),
-          time: normalizeTime(ev.time),
-          who: (ev.who || 'fernando').toLowerCase(),
-          type: ev.type || 'normal'
-        }));
+  state.events = collapseDuplicateEvents(rawEvents.map(ev => ({
+  ...ev,
+  date: normalizeDate(ev.date),
+  enddate: normalizeDate(ev.enddate || ev.date || ''),
+  time: normalizeTime(ev.time),
+  who: (ev.who || 'fernando').toLowerCase(),
+  type: ev.type || 'normal'
+})));
         render();
         if (showMessage) setStatus('Sincronizado.');
       } catch (err) {
@@ -940,8 +940,10 @@
       state.isSaving = true;
       setStatus('Guardando…');
       try {
-        const payload = { events: state.events.map(ev => ({
-          id: ev.id || '',
+       const dedupedEvents = collapseDuplicateEvents(state.events);
+state.events = dedupedEvents;
+const payload = { events: dedupedEvents.map(ev => ({
+id: (ev.sourceIds && ev.sourceIds[0]) || ev.id || `ev_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
           title: ev.title || '',
           date: normalizeDate(ev.date),
           time: normalizeTime(ev.time),
@@ -1088,6 +1090,64 @@
       if (t.length <= max) return t;
       return t.slice(0, Math.max(1, max - 1)).trim() + '…';
     }
+function normalizeText(value) {
+  return String(value || '')
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function eventSignature(ev) {
+  return [
+    normalizeText(ev.title),
+    normalizeDate(ev.date),
+    normalizeDate(ev.enddate || ev.date || ''),
+    normalizeTime(ev.time),
+    normalizeText(ev.note),
+    normalizeText(inferGuardiaType(ev.title))
+  ].join('||');
+}
+
+function collapseDuplicateEvents(events) {
+  const map = new Map();
+
+  for (const ev of events) {
+    const normalized = {
+      ...ev,
+      date: normalizeDate(ev.date),
+      enddate: normalizeDate(ev.enddate || ev.date || ''),
+      time: normalizeTime(ev.time),
+      who: (ev.who || 'fernando').toLowerCase(),
+      type: ev.type || 'normal'
+    };
+
+    const key = eventSignature(normalized);
+    const existing = map.get(key);
+
+    if (!existing) {
+      map.set(key, {
+        ...normalized,
+        sourceIds: [normalized.id].filter(Boolean)
+      });
+    } else {
+      existing.sourceIds = Array.from(
+        new Set([...(existing.sourceIds || []), normalized.id].filter(Boolean))
+      );
+
+      if (existing.who !== normalized.who) {
+        existing.who = 'both';
+      }
+
+      if (!existing.createdBy && normalized.createdBy) {
+        existing.createdBy = normalized.createdBy;
+      }
+    }
+  }
+
+  return Array.from(map.values());
+}
 
     function ownerLabel(who) {
       if (who === 'fernando') return 'Fernando';
