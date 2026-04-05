@@ -196,6 +196,29 @@
       flex-direction: column;
     }
 
+    .day-guardia {
+      background: #ffe5e5;
+      border-color: #ff6b6b;
+    }
+
+    .day-malvarrosa {
+      background: #f3e5ff;
+      border-color: #b57aff;
+    }
+      position: relative;
+      width: 100%;
+      aspect-ratio: 1 / 1;
+      min-height: 0;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 4px 4px 4px;
+      overflow: hidden;
+      background: #fff;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+    }
+
     .day.other-month {
       opacity: .42;
       background: #fafcff;
@@ -741,6 +764,21 @@
       medico: '🩺'
     };
 
+    const typeDayColors = {
+      guardia_hcuv: 'day-guardia',
+      guardia_malvarrosa: 'day-malvarrosa'
+    };
+
+    function inferGuardiaType(title) {
+      const t = (title || '').toLowerCase();
+      if (!t.includes('guardia')) return 'normal';
+
+      if (t.includes('malvarrosa') || t.includes('malva')) {
+        return 'guardia_malvarrosa';
+      }
+      return 'guardia_hcuv';
+    }
+
     const els = {
       title: document.getElementById('currentTitle'),
       monthGrid: document.getElementById('monthGrid'),
@@ -958,6 +996,17 @@
         const isOtherMonth = date.getMonth() !== currentMonth;
         const weekday = date.getDay();
         day.className = 'day';
+
+        // Colorear día según tipo de evento
+        const specialEvent = items.find(ev => {
+          const inferred = inferGuardiaType(ev.title);
+          return typeDayColors[inferred];
+        });
+
+        if (specialEvent) {
+          const inferred = inferGuardiaType(specialEvent.title);
+          day.classList.add(typeDayColors[inferred]);
+        }
         if (isOtherMonth) day.classList.add('other-month');
         if (weekday === 6) day.classList.add('sat');
         if (weekday === 0) day.classList.add('sun');
