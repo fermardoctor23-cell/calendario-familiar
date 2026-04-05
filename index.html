@@ -197,13 +197,13 @@
     }
 
     .day-guardia {
-      background: #ffe5e5;
-      border-color: #ff6b6b;
+      background: #ffdede !important;
+      border-color: #ff6b6b !important;
     }
 
     .day-malvarrosa {
-      background: #f3e5ff;
-      border-color: #b57aff;
+      background: #f0ddff !important;
+      border-color: #b57aff !important;
     }
       position: relative;
       width: 100%;
@@ -770,13 +770,17 @@
     };
 
     function inferGuardiaType(title) {
-      const t = (title || '').toLowerCase();
+      const t = String(title || '').toLowerCase().trim();
       if (!t.includes('guardia')) return 'normal';
-
-      if (t.includes('malvarrosa') || t.includes('malva')) {
-        return 'guardia_malvarrosa';
-      }
+      if (t.includes('malvarrosa') || t.includes('malva')) return 'guardia_malvarrosa';
       return 'guardia_hcuv';
+    }
+
+    function getDayColorClass(items) {
+      const inferredTypes = items.map(ev => inferGuardiaType(ev.title));
+      if (inferredTypes.includes('guardia_malvarrosa')) return 'day-malvarrosa';
+      if (inferredTypes.includes('guardia_hcuv')) return 'day-guardia';
+      return '';
     }
 
     const els = {
@@ -912,7 +916,7 @@
       }
       try {
         if (showMessage) setStatus('Actualizando…');
-        const res = await fetch(SCRIPT_URL, { cache: 'no-store' });
+        const res = await fetch(`${SCRIPT_URL}${SCRIPT_URL.includes('?') ? '&' : '?'}t=${Date.now()}`, { cache: 'no-store' });
         const data = await res.json();
         const rawEvents = Array.isArray(data) ? data : (data.events || []);
         state.events = rawEvents.map(ev => ({
@@ -956,7 +960,8 @@
         const data = await res.json();
         if (!data.ok) throw new Error(data.error || 'No se pudo guardar.');
         setStatus('Guardado.');
-        await loadEvents(false);
+        await new Promise(resolve => setTimeout(resolve, 250));
+        await loadEvents(true);
       } catch (err) {
         console.error(err);
         setStatus('Error al guardar.', true);
@@ -998,14 +1003,9 @@
         day.className = 'day';
 
         // Colorear día según tipo de evento
-        const specialEvent = items.find(ev => {
-          const inferred = inferGuardiaType(ev.title);
-          return typeDayColors[inferred];
-        });
-
-        if (specialEvent) {
-          const inferred = inferGuardiaType(specialEvent.title);
-          day.classList.add(typeDayColors[inferred]);
+        const specialClass = getDayColorClass(items);
+        if (specialClass) {
+          day.classList.add(specialClass);
         }
         if (isOtherMonth) day.classList.add('other-month');
         if (weekday === 6) day.classList.add('sat');
@@ -1189,7 +1189,7 @@
 
     function startAutoRefresh() {
       if (state.refreshTimer) clearInterval(state.refreshTimer);
-      state.refreshTimer = setInterval(() => loadEvents(false), 30000);
+      state.refreshTimer = setInterval(() => loadEvents(false), 5000);
     }
 
     function updateOrientationClass() {
