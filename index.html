@@ -940,30 +940,34 @@
       state.isSaving = true;
       setStatus('Guardando…');
       try {
-        const payload = { events: state.events.map(ev => ({
-          id: ev.id || '',
-          title: ev.title || '',
-          date: normalizeDate(ev.date),
-          time: normalizeTime(ev.time),
-          enddate: normalizeDate(ev.enddate || ev.date || ''),
-          who: ev.who || 'fernando',
-          note: ev.note || '',
-          createdBy: ev.createdBy || 'fernando',
-          type: ev.type || 'normal'
-        })) };
+        const payload = {
+          events: state.events.map(ev => ({
+            id: ev.id || '',
+            title: ev.title || '',
+            date: normalizeDate(ev.date),
+            time: normalizeTime(ev.time),
+            enddate: normalizeDate(ev.enddate || ev.date || ''),
+            who: ev.who || 'fernando',
+            note: ev.note || '',
+            createdBy: ev.createdBy || 'fernando',
+            type: ev.type || 'normal'
+          }))
+        };
 
-        const res = await fetch(SCRIPT_URL, {
+        console.log('PAYLOAD TO SAVE', payload);
+
+        await fetch(SCRIPT_URL, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          mode: 'no-cors',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
           body: JSON.stringify(payload)
         });
-        const data = await res.json();
-        if (!data.ok) throw new Error(data.error || 'No se pudo guardar.');
+
         setStatus('Guardado.');
-        await new Promise(resolve => setTimeout(resolve, 250));
+        await new Promise(resolve => setTimeout(resolve, 700));
         await loadEvents(true);
       } catch (err) {
-        console.error(err);
+        console.error('saveEvents error', err);
         setStatus('Error al guardar.', true);
       } finally {
         state.isSaving = false;
