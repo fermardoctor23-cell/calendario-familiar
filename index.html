@@ -841,7 +841,7 @@
 
     function ownerClass(who) {
       if (who === 'fernando') return 'owner-fernando';
-      if (who === 'yolanda') return 'owner-yolanda';
+      if (who === 'yolanda' || who === 'esposa') return 'owner-yolanda';
       if (who === 'both') return 'owner-both';
       return 'owner-default';
     }
@@ -906,19 +906,23 @@
         const res = await fetch(`${SCRIPT_URL}${SCRIPT_URL.includes('?') ? '&' : '?'}t=${Date.now()}`, { cache: 'no-store' });
         const data = await res.json();
         const rawEvents = Array.isArray(data) ? data : (data.events || []);
-        state.events = rawEvents.map(ev => ({
-          ...ev,
-          date: normalizeDate(ev.date),
-          enddate: normalizeDate(ev.enddate || ev.date || ''),
-          time: normalizeTime(ev.time),
-          who: (ev.who || 'fernando').toLowerCase(),
-          type: ev.type || 'normal'
-        }));
+        state.events = rawEvents.map(ev => {
+          let who = (ev.who || 'fernando').toLowerCase().trim();
+          if (who === 'esposa') who = 'yolanda';
+          return {
+            ...ev,
+            date: normalizeDate(ev.date),
+            enddate: normalizeDate(ev.enddate || ev.date || ''),
+            time: normalizeTime(ev.time),
+            who,
+            type: ev.type || inferGuardiaType(ev.title || '')
+          };
+        });
         render();
         if (showMessage) setStatus('Sincronizado.');
       } catch (err) {
         console.error(err);
-        setStatus('Error conectando con Google Sheets.', true);
+        setStatus('Error: ' + err.message, true);
       }
     }
 
@@ -935,7 +939,7 @@
             date: normalizeDate(ev.date),
             time: normalizeTime(ev.time),
             enddate: normalizeDate(ev.enddate || ev.date || ''),
-            who: ev.who || 'fernando',
+            who: ev.who === 'yolanda' ? 'yolanda' : (ev.who || 'fernando'),
             note: ev.note || '',
             createdBy: ev.createdBy || 'fernando',
             type: ev.type || 'normal'
