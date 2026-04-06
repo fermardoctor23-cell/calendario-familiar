@@ -205,19 +205,6 @@
       background: #f0ddff !important;
       border-color: #b57aff !important;
     }
-      position: relative;
-      width: 100%;
-      aspect-ratio: 1 / 1;
-      min-height: 0;
-      border: 1px solid var(--line);
-      border-radius: 12px;
-      padding: 4px 4px 4px;
-      overflow: hidden;
-      background: #fff;
-      cursor: pointer;
-      display: flex;
-      flex-direction: column;
-    }
 
     .day.other-month {
       opacity: .42;
@@ -736,7 +723,7 @@
   </div>
 
   <script>
-    const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyQbxkBeJkDskPKEpwd-pua_RKl_UEXHPZQPutpa51FJ0C6nKiYdPgN9sUXtT0OozoZ/exec';
+    const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbysAi21EZfmPKdqWEN9W0BZJEioTMMECHetjqk_hmk3WurLGfRom_U26ZHPjNqVH8WJ/exec';
 
     const state = {
       events: [],
@@ -955,17 +942,15 @@
           }))
         };
 
-        const url = `${SCRIPT_URL}?action=save&data=${encodeURIComponent(JSON.stringify(payload))}`;
-        const res = await fetch(url, { cache: 'no-store' });
-        const data = await res.json();
-
-        if (!data.ok) {
-          throw new Error(data.error || 'No se pudo guardar.');
-        }
-
+        await fetch(SCRIPT_URL, {
+          method: 'POST',
+          mode: 'no-cors',
+          headers: { 'Content-Type': 'text/plain' },
+          body: JSON.stringify(payload)
+        });
         setStatus('Guardado.');
-        await new Promise(resolve => setTimeout(resolve, 300));
-        await loadEvents(true);
+        await new Promise(resolve => setTimeout(resolve, 1500));
+        await loadEvents(false);
       } catch (err) {
         console.error('saveEvents error', err);
         setStatus('Error al guardar.', true);
