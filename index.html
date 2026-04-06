@@ -456,6 +456,88 @@
     }
 
     @media (max-width: 760px) {
+      body.landscape-mobile .app {
+        max-width: 100vw;
+        width: 100vw;
+        padding: 2px;
+      }
+      body.landscape-mobile .topbar {
+        position: sticky;
+        top: 0;
+        z-index: 30;
+        padding: 6px 8px;
+        gap: 6px;
+        margin-bottom: 4px;
+      }
+      body.landscape-mobile .weekday-row, body.landscape-mobile .month-grid {
+        gap: 1px;
+      }
+      body.landscape-mobile .day {
+        aspect-ratio: 1 / 1;
+        border-radius: 6px;
+        padding: 1px;
+      }
+      body.landscape-mobile .event-pill {
+        font-size: .48rem;
+        padding: 1px 2px;
+        min-height: 12px;
+        border-radius: 4px;
+      }
+
+      @media (orientation: landscape) {
+        body {
+          overflow-x: hidden;
+        }
+        body.landscape-mobile .title-wrap h1 {
+          font-size: .92rem;
+        }
+        body.landscape-mobile .subtitle,
+        body.landscape-mobile .legend,
+        body.landscape-mobile .status {
+          display: none;
+        }
+        body.landscape-mobile .toolbar {
+          gap: 4px;
+        }
+        body.landscape-mobile .who-chip,
+        body.landscape-mobile .view-chip,
+        body.landscape-mobile .btn-primary,
+        body.landscape-mobile .btn-soft,
+        body.landscape-mobile .nav-btn {
+          font-size: .68rem;
+          padding: 5px 7px;
+          border-radius: 8px;
+          min-width: 30px;
+        }
+        body.landscape-mobile .calendar-shell {
+          padding: 4px;
+        }
+        body.landscape-mobile .month-bar {
+          margin-bottom: 4px;
+          gap: 6px;
+        }
+        body.landscape-mobile .month-title {
+          font-size: .88rem;
+        }
+        body.landscape-mobile .weekday {
+          font-size: .52rem;
+        }
+        body.landscape-mobile .day-num {
+          font-size: .62rem;
+          margin-bottom: 1px;
+          padding-right: 8px;
+        }
+        body.landscape-mobile .corner-icon {
+          font-size: .5rem;
+          top: 2px;
+          right: 2px;
+        }
+        body.landscape-mobile .more-pill {
+          font-size: .45rem;
+        }
+      }
+      }
+
       .app { padding: 4px; }
       .topbar { padding: 8px; gap: 8px; margin-bottom: 8px; }
       .title-wrap h1 { font-size: 1rem; }
@@ -484,10 +566,7 @@
         gap: 5px;
         margin-bottom: 6px;
       }
-      .weekday-row { gap: 3px; }
-      .week-days-row, .week-bar-row { gap: 3px; }
-      .month-week { gap: 3px; margin-bottom: 4px; }
-      .month-bar-event { min-height: 18px; font-size: .56rem; padding: 2px 4px; border-radius: 5px; }
+      .weekday-row, .month-grid { gap: 3px; }
       .weekday {
         font-size: .6rem;
         letter-spacing: 0;
@@ -523,91 +602,6 @@
       }
       .form-grid { grid-template-columns: 1fr; }
       .modal { border-radius: 20px 20px 0 0; padding: 14px; }
-
-      body.landscape-mobile .app {
-        max-width: 100vw;
-        width: 100vw;
-        padding: 2px;
-      }
-      body.landscape-mobile .topbar {
-        position: sticky;
-        top: 0;
-        z-index: 30;
-        padding: 6px 8px;
-        gap: 6px;
-        margin-bottom: 4px;
-      }
-      body.landscape-mobile .weekday-row {
-        gap: 1px;
-      }
-      body.landscape-mobile .week-days-row,
-      body.landscape-mobile .week-bar-row {
-        gap: 1px;
-      }
-      body.landscape-mobile .day {
-        aspect-ratio: 1 / 1;
-        border-radius: 6px;
-        padding: 1px;
-      }
-      body.landscape-mobile .event-pill {
-        font-size: .48rem;
-        padding: 1px 2px;
-        min-height: 12px;
-        border-radius: 4px;
-      }
-    }
-
-    @media (max-width: 760px) and (orientation: landscape) {
-      body {
-        overflow-x: hidden;
-      }
-      body.landscape-mobile .title-wrap h1 {
-        font-size: .92rem;
-      }
-      body.landscape-mobile .subtitle,
-      body.landscape-mobile .legend,
-      body.landscape-mobile .status {
-        display: none;
-      }
-      body.landscape-mobile .toolbar {
-        gap: 4px;
-      }
-      body.landscape-mobile .who-chip,
-      body.landscape-mobile .view-chip,
-      body.landscape-mobile .btn-primary,
-      body.landscape-mobile .btn-soft,
-      body.landscape-mobile .nav-btn {
-        font-size: .68rem;
-        padding: 5px 7px;
-        border-radius: 8px;
-        min-width: 30px;
-      }
-      body.landscape-mobile .calendar-shell {
-        padding: 4px;
-      }
-      body.landscape-mobile .month-bar {
-        margin-bottom: 4px;
-        gap: 6px;
-      }
-      body.landscape-mobile .month-title {
-        font-size: .88rem;
-      }
-      body.landscape-mobile .weekday {
-        font-size: .52rem;
-      }
-      body.landscape-mobile .day-num {
-        font-size: .62rem;
-        margin-bottom: 1px;
-        padding-right: 8px;
-      }
-      body.landscape-mobile .corner-icon {
-        font-size: .5rem;
-        top: 2px;
-        right: 2px;
-      }
-      body.landscape-mobile .more-pill {
-        font-size: .45rem;
-      }
     }
   </style>
 </head>
@@ -996,143 +990,61 @@
       if (state.currentView === 'day') renderDay();
     }
 
-    function ymdToDate(ymd) {
-  if (!ymd || !/^\d{4}-\d{2}-\d{2}$/.test(ymd)) return null;
-  const [y, m, d] = ymd.split('-').map(Number);
-  return new Date(y, m - 1, d);
-}
+    function renderMonth() {
+      const gridStart = startOfMonthGrid(state.currentDate);
+      const todayYmd = toYMD(startOfDay(new Date()));
+      const currentMonth = state.currentDate.getMonth();
+      els.monthGrid.innerHTML = '';
+      const maxItems = window.innerWidth <= 760 ? 3 : 4;
 
-function diffDays(a, b) {
-  const ms = startOfDay(b).getTime() - startOfDay(a).getTime();
-  return Math.round(ms / 86400000);
-}
+      for (let i = 0; i < 42; i++) {
+        const date = addDays(gridStart, i);
+        const ymd = toYMD(date);
+        const items = eventsForDate(ymd);
+        const day = document.createElement('div');
+        const isOtherMonth = date.getMonth() !== currentMonth;
+        const weekday = date.getDay();
+        day.className = 'day';
 
-function getMonthWeekSegments(weekDates) {
-  const weekStart = toYMD(weekDates[0]);
-  const weekEnd = toYMD(weekDates[6]);
+        // Colorear día según tipo de evento
+        const specialClass = getDayColorClass(items);
+        if (specialClass) {
+          day.classList.add(specialClass);
+        }
+        if (isOtherMonth) day.classList.add('other-month');
+        if (weekday === 6) day.classList.add('sat');
+        if (weekday === 0) day.classList.add('sun');
+        if (ymd === todayYmd) day.classList.add('today');
 
-  const weekEvents = state.events
-    .filter(ev => eventMatchesUser(ev))
-    .map(ev => ({
-      ...ev,
-      _start: normalizeDate(ev.date),
-      _end: normalizeDate(ev.enddate || ev.date || '') || normalizeDate(ev.date)
-    }))
-    .filter(ev => ev._start && ev._start <= weekEnd && ev._end >= weekStart);
+        const topIcon = (items[0] && iconFor(items[0])) ? `<div class="corner-icon has-icon">${iconFor(items[0])}</div>` : '';
+        const shown = items.slice(0, maxItems).map(ev => {
+          const sub = window.innerWidth <= 760 ? '' : summarizeEvent(ev, ymd);
+          const title = compactTitle(ev.title, window.innerWidth <= 760 ? 10 : 18);
+          const start = normalizeDate(ev.date);
+          const end = normalizeDate(ev.enddate || ev.date || '');
+          const isMulti = end && end !== start;
+          let style = '';
+          if (isMulti) {
+            const prevDay = addDays(date, -1);
+            const nextDay = addDays(date, 1);
+            const prevIn = eventSpansDate(ev, toYMD(prevDay));
+            const nextIn = eventSpansDate(ev, toYMD(nextDay));
+            if (prevIn) style += 'border-top-left-radius:0;border-bottom-left-radius:0;margin-left:-4px;padding-left:7px;';
+            if (nextIn) style += 'border-top-right-radius:0;border-bottom-right-radius:0;margin-right:-4px;padding-right:7px;';
+          }
+          return `<div class="event-pill ${ownerClass(ev.who)}" style="${style}" data-id="${escapeHtml(ev.id)}">${escapeHtml(title)}${sub ? `<small>${escapeHtml(sub)}</small>` : ''}</div>`;
+        }).join('');
+        const more = items.length > maxItems ? `<div class="more-pill">+${items.length - maxItems} más</div>` : '';
 
-  const lanes = [];
-
-  for (const ev of weekEvents) {
-    const startCol = Math.max(0, diffDays(weekDates[0], ymdToDate(ev._start)));
-    const endCol = Math.min(6, diffDays(weekDates[0], ymdToDate(ev._end)));
-
-    let laneIndex = 0;
-
-    while (true) {
-      if (!lanes[laneIndex]) lanes[laneIndex] = [];
-
-      const overlap = lanes[laneIndex].some(seg =>
-        !(endCol < seg.startCol || startCol > seg.endCol)
-      );
-
-      if (!overlap) break;
-      laneIndex++;
+        day.innerHTML = `${topIcon}<div class="day-num">${date.getDate()}</div><div class="events-stack">${shown}${more}</div>`;
+        day.addEventListener('click', (e) => {
+          const pill = e.target.closest('.event-pill');
+          if (pill) { e.stopPropagation(); openEdit(pill.dataset.id); return; }
+          openCreate(ymd);
+        });
+        els.monthGrid.appendChild(day);
+      }
     }
-
-    lanes[laneIndex].push({
-      event: ev,
-      startCol,
-      endCol,
-      continuesLeft: ev._start < weekStart,
-      continuesRight: ev._end > weekEnd
-    });
-  }
-
-  return lanes;
-}
-
-function renderMonth() {
-  const gridStart = startOfMonthGrid(state.currentDate);
-  const todayYmd = toYMD(startOfDay(new Date()));
-  const currentMonth = state.currentDate.getMonth();
-
-  els.monthGrid.innerHTML = '';
-
-  for (let week = 0; week < 6; week++) {
-    const weekDates = Array.from({ length: 7 }, (_, i) =>
-      addDays(gridStart, week * 7 + i)
-    );
-
-    const weekWrap = document.createElement('div');
-    weekWrap.className = 'month-week';
-
-    // 🔹 DÍAS
-    const daysRow = document.createElement('div');
-    daysRow.className = 'week-days-row';
-
-    weekDates.forEach(date => {
-      const ymd = toYMD(date);
-      const items = eventsForDate(ymd);
-
-      const day = document.createElement('div');
-      day.className = 'day';
-
-      const specialClass = getDayColorClass(items);
-      if (specialClass) day.classList.add(specialClass);
-      if (date.getMonth() !== currentMonth) day.classList.add('other-month');
-      if (date.getDay() === 6) day.classList.add('sat');
-      if (date.getDay() === 0) day.classList.add('sun');
-      if (ymd === todayYmd) day.classList.add('today');
-
-      day.innerHTML = `<div class="day-num">${date.getDate()}</div>`;
-      day.onclick = () => openCreate(ymd);
-
-      daysRow.appendChild(day);
-    });
-
-    // 🔹 BARRAS
-    const barsWrap = document.createElement('div');
-    barsWrap.className = 'week-bars';
-
-    const lanes = getMonthWeekSegments(weekDates);
-
-    lanes.forEach(lane => {
-      const row = document.createElement('div');
-      row.className = 'week-bar-row';
-
-      lane.forEach(seg => {
-        const ev = seg.event;
-
-        const bar = document.createElement('div');
-
-        let color = ownerClass(ev.who);
-
-        const tipo = inferGuardiaType(ev.title);
-        if (tipo === 'guardia_hcuv') color = 'day-guardia';
-        if (tipo === 'guardia_malvarrosa') color = 'day-malvarrosa';
-
-        bar.className = `month-bar-event ${color}`;
-        bar.style.gridColumn = `${seg.startCol + 1} / ${seg.endCol + 2}`;
-
-        bar.textContent = compactTitle(ev.title, 18);
-
-        bar.onclick = (e) => {
-          e.stopPropagation();
-          openEdit(ev.id);
-        };
-
-        row.appendChild(bar);
-      });
-
-      barsWrap.appendChild(row);
-    });
-
-    weekWrap.appendChild(daysRow);
-    weekWrap.appendChild(barsWrap);
-
-    els.monthGrid.appendChild(weekWrap);
-  }
-}
 
     function renderWeek() {
       const start = startOfWeek(state.currentDate);
