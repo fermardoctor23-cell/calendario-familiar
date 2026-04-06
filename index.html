@@ -663,6 +663,7 @@
         <button class="btn-primary" id="newEventBtn">+ Evento</button>
         <button class="btn-soft" id="todayBtn">Hoy</button>
         <button class="btn-soft" id="importIcsBtn">Importar .ics</button>
+        <button class="btn-soft" id="aiBtn" style="background:#f0f4ff;color:#3730a3;border:1px solid #c7d2fe;">&#10024; Añadir con IA</button>
         <input type="file" id="icsFileInput" accept=".ics" style="display:none"/>
       </div>
     </div>
@@ -703,6 +704,29 @@
 
       <div class="day-view hidden" id="dayView">
         <div class="day-panel" id="dayPanel"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="overlay" id="aiOverlay" style="display:none;">
+    <div class="modal" style="max-width:560px;">
+      <h2>&#10024; Añadir eventos con IA</h2>
+      <p style="color:var(--muted);font-size:.88rem;margin:0 0 12px;">Escribe en lenguaje natural. Por ejemplo:<br>
+      <em>"El lunes tengo guardia en el HCUV y el miercoles comida con el jefe a las 2"</em></p>
+      <div class="field full" style="margin-bottom:12px;">
+        <textarea id="ai-input" placeholder="Describe tus eventos aqui..." style="min-height:100px;width:100%;border:1px solid var(--line);border-radius:12px;padding:11px 12px;font:inherit;resize:vertical;"></textarea>
+      </div>
+      <div id="ai-result" style="display:none;">
+        <div style="font-size:.88rem;font-weight:700;color:var(--muted);margin-bottom:8px;">Eventos detectados:</div>
+        <div id="ai-events-list" style="max-height:220px;overflow-y:auto;border:1px solid var(--line);border-radius:12px;padding:8px;background:#fafcff;"></div>
+      </div>
+      <div id="ai-status" style="font-size:.85rem;color:var(--muted);margin-top:8px;min-height:20px;"></div>
+      <div class="modal-actions" style="margin-top:14px;">
+        <div class="actions-left"><button class="btn-soft" id="aiCancelBtn">Cancelar</button></div>
+        <div class="actions-right">
+          <button class="btn-soft" id="aiParseBtn" style="background:#f0f4ff;color:#3730a3;">Interpretar</button>
+          <button class="btn-primary" id="aiAddBtn" style="display:none;">Añadir al calendario</button>
+        </div>
       </div>
     </div>
   </div>
@@ -798,7 +822,7 @@
     const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbysAi21EZfmPKdqWEN9W0BZJEioTMMECHetjqk_hmk3WurLGfRom_U26ZHPjNqVH8WJ/exec';
 
     // ---- SEGURIDAD ----
-    const CORRECT_PIN = 'KA-220-HED'; // <-- CAMBIA ESTO por tu contrasena
+    const CORRECT_PIN = '2606'; // <-- CAMBIA ESTO por tu contrasena
     const PIN_KEY = 'cal-pin-ok';
 
     function checkPin() {
@@ -1273,7 +1297,115 @@
 
     function goToday() { state.currentDate = startOfDay(new Date()); render(); }
 
-    // --- ICS IMPORT ---
+    // ---- IA PARSER ----
+    let aiParsedEvents = [];
+
+    async function parseEventsWithAI() {
+      const input = document.getElementById('ai-input').value.trim();
+      if (!input) { document.getElementById('ai-status').textContent = 'Escribe algo primero.'; return; }
+
+      const parseBtn = document.getElementById('aiParseBtn');
+      const addBtn = document.getElementById('aiAddBtn');
+      const statusEl = document.getElementById('ai-status');
+      const resultEl = document.getElementById('ai-result');
+
+      parseBtn.disabled = true;
+      parseBtn.textContent = 'Interpretando...';
+      statusEl.textContent = '';
+      resultEl.style.display = 'none';
+      addBtn.style.display = 'none';
+      aiParsedEvents = [];
+
+      const today = new Date();
+      const todayStr = today.toISOString().split('T')[0];
+      const weekday = ['domingo','lunes','martes','miercoles','jueves','viernes','sabado'][today.getDay()];
+
+      const prompt = `Hoy es ${weekday} ${todayStr}. Analiza este texto y extrae todos los eventos de calendario que menciona. Devuelve SOLO un array JSON valido, sin explicaciones ni markdown.
+
+Texto: "${input}"
+
+Reglas:
+- Calcula fechas absolutas (YYYY-MM-DD) desde hoy (${todayStr})
+- "el lunes" = proximo lunes, "esta semana" = dentro de 7 dias
+- enddate = misma fecha que date salvo eventos de varios dias
+- type: "guardia_hcuv" si menciona guardia/hospital/HCUV, "guardia_malvarrosa" si menciona Malvarrosa, "cumpleanos" si es cumpleanos, "comida" si es comida/cena/almuerzo, "viaje" si es viaje/vuelo/Frankfurt/congreso, "reunion" si es reunion/junta/meeting, "congreso" si es congreso/simposio, "medico" si es medico/veterinario/cita medica/vacuna, "vacaciones" si son vacaciones, "normal" para el resto
+- who: "fernando" por defecto
+- time: formato HH:MM o vacio si no se menciona
+
+Formato de cada evento:
+{"title":"...","date":"YYYY-MM-DD","enddate":"YYYY-MM-DD","time":"HH:MM","who":"fernando","type":"normal","note":""}
+
+Array JSON:`;
+
+      try {
+        const response = await fetch('https://api.anthropic.com/v1/messages', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            model: 'claude-sonnet-4-20250514',
+            max_tokens: 1000,
+            messages: [{ role: 'user', content: prompt }]
+          })
+        });
+        const data = await response.json();
+        const text = data.content?.[0]?.text || '';
+        const match = text.match(/\[[\s\S]*\]/);
+        if (!match) throw new Error('No se pudo parsear la respuesta');
+        const parsed = JSON.parse(match[0]);
+        if (!Array.isArray(parsed) || parsed.length === 0) throw new Error('No se encontraron eventos');
+
+        aiParsedEvents = parsed.map(ev => ({
+          ...ev,
+          id: 'ev_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2,7)
+        }));
+
+        // Show preview
+        const list = document.getElementById('ai-events-list');
+        list.innerHTML = '';
+        const months = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+        const typeLabels = {
+          guardia_hcuv:'🏥',guardia_malvarrosa:'🚑',cumpleanos:'🎂',
+          comida:'🍽️',viaje:'✈️',reunion:'👥',congreso:'🎓',
+          medico:'🩺',vacaciones:'🏖️',normal:'📅'
+        };
+        aiParsedEvents.forEach(ev => {
+          const parts = (ev.date||'').split('-');
+          const dateLabel = (parts[2]?parseInt(parts[2]):'?')+' '+(months[parseInt(parts[1]||1)-1]||'')+' '+(parts[0]||'');
+          const timeLabel = ev.time ? ' · '+ev.time : '';
+          const icon = typeLabels[ev.type] || '📅';
+          const row = document.createElement('div');
+          row.style.cssText = 'padding:8px 6px;border-bottom:1px solid #f0f4f8;display:flex;align-items:center;gap:8px;font-size:.88rem;';
+          row.innerHTML = '<span style="font-size:1.1rem;">'+icon+'</span><div><strong>'+ev.title+'</strong><div style="color:var(--muted);font-size:.8rem;">'+dateLabel+timeLabel+'</div></div>';
+          list.appendChild(row);
+        });
+
+        resultEl.style.display = 'block';
+        addBtn.style.display = 'inline-block';
+        statusEl.textContent = aiParsedEvents.length + ' evento(s) detectado(s). Revisa y pulsa "Anadir al calendario".';
+      } catch(err) {
+        statusEl.style.color = '#ef4444';
+        statusEl.textContent = 'Error: ' + (err.message || 'No se pudo interpretar el texto');
+        console.error(err);
+      } finally {
+        parseBtn.disabled = false;
+        parseBtn.textContent = 'Interpretar';
+      }
+    }
+
+    async function addAIEvents() {
+      if (!aiParsedEvents.length) return;
+      state.events = [...state.events, ...aiParsedEvents];
+      render();
+      document.getElementById('aiOverlay').style.display = 'none';
+      document.getElementById('ai-input').value = '';
+      document.getElementById('ai-result').style.display = 'none';
+      document.getElementById('aiAddBtn').style.display = 'none';
+      setStatus('Guardando ' + aiParsedEvents.length + ' eventos...');
+      aiParsedEvents = [];
+      await saveEvents();
+    }
+
+        // --- ICS IMPORT ---
     let icsBuffer = [];
     function parseICS(txt) {
       const evs = [];
@@ -1346,6 +1478,16 @@
       document.getElementById('deleteBtn').addEventListener('click', handleDelete);
       els.overlay.addEventListener('click', (e) => { if (e.target === els.overlay) closeModal(); });
       document.querySelectorAll('.who-chip').forEach(btn => btn.addEventListener('click', () => { state.currentUser = btn.dataset.who; render(); }));
+      document.getElementById('aiBtn').addEventListener('click', () => {
+        document.getElementById('aiOverlay').style.display = 'flex';
+        document.getElementById('ai-status').textContent = '';
+        document.getElementById('ai-status').style.color = 'var(--muted)';
+        setTimeout(() => document.getElementById('ai-input').focus(), 100);
+      });
+      document.getElementById('aiCancelBtn').addEventListener('click', () => { document.getElementById('aiOverlay').style.display = 'none'; });
+      document.getElementById('aiParseBtn').addEventListener('click', parseEventsWithAI);
+      document.getElementById('aiAddBtn').addEventListener('click', addAIEvents);
+      document.getElementById('aiOverlay').addEventListener('click', (e) => { if (e.target === document.getElementById('aiOverlay')) document.getElementById('aiOverlay').style.display = 'none'; });
       document.getElementById('importIcsBtn').addEventListener('click', () => document.getElementById('icsFileInput').click());
       document.getElementById('icsFileInput').addEventListener('change', (e) => {
         const f = e.target.files[0]; if (!f) return;
