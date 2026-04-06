@@ -118,7 +118,7 @@
       min-height: 24px;
     }
 
-    .calendar-shell { padding: 12px; overflow: visible; }
+    .calendar-shell { padding: 12px; }
 
     .month-bar {
       display: grid;
@@ -194,7 +194,6 @@
       cursor: pointer;
       display: flex;
       flex-direction: column;
-      clip-path: none;
     }
 
     .day-guardia {
@@ -248,7 +247,7 @@
       gap: 2px;
       flex: 1;
       min-height: 0;
-      overflow: visible;
+      overflow: hidden;
     }
 
     .event-pill {
@@ -258,19 +257,12 @@
       line-height: 1.05;
       font-weight: 700;
       border: 1px solid rgba(0,0,0,.05);
-      overflow: hidden;
+      overflow: visible;
       box-shadow: 0 1px 2px rgba(0,0,0,.04);
       min-height: 18px;
       display: flex;
       flex-direction: column;
       justify-content: center;
-    }
-    .event-pill.multi-day {
-      position: relative;
-      z-index: 2;
-      border-left: none;
-      border-right: none;
-      box-shadow: none;
     }
 
     .event-pill small {
@@ -620,6 +612,8 @@
         <button class="view-chip" data-view="day">Día</button>
         <button class="btn-primary" id="newEventBtn">+ Evento</button>
         <button class="btn-soft" id="todayBtn">Hoy</button>
+        <button class="btn-soft" id="importIcsBtn">Importar .ics</button>
+        <input type="file" id="icsFileInput" accept=".ics" style="display:none"/>
       </div>
     </div>
 
@@ -659,6 +653,26 @@
 
       <div class="day-view hidden" id="dayView">
         <div class="day-panel" id="dayPanel"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="overlay" id="icsOverlay" style="display:none;">
+    <div class="modal" style="max-width:520px;">
+      <h2>Importar eventos (.ics)</h2>
+      <div style="margin-bottom:12px;">
+        <label style="font-size:.88rem;color:var(--muted);font-weight:700;">Para quien</label>
+        <select id="icsWho" style="width:100%;margin-top:6px;border:1px solid var(--line);border-radius:12px;padding:11px 12px;min-height:44px;">
+          <option value="fernando">Fernando</option>
+          <option value="yolanda">Yolanda</option>
+          <option value="both">Ambos</option>
+        </select>
+      </div>
+      <div id="icsPreview" style="max-height:280px;overflow-y:auto;border:1px solid var(--line);border-radius:12px;padding:8px;background:#fafcff;font-size:.85rem;"></div>
+      <div id="icsCount" style="font-size:.82rem;color:var(--muted);margin-top:6px;"></div>
+      <div class="modal-actions">
+        <div class="actions-left"><button class="btn-soft" id="icsCancelBtn">Cancelar</button></div>
+        <div class="actions-right"><button class="btn-primary" id="icsImportBtn">Importar</button></div>
       </div>
     </div>
   </div>
@@ -849,7 +863,7 @@
 
     function ownerClass(who) {
       if (who === 'fernando') return 'owner-fernando';
-      if (who === 'yolanda' || who === 'esposa') return 'owner-yolanda';
+      if (who === 'yolanda') return 'owner-yolanda';
       if (who === 'both') return 'owner-both';
       return 'owner-default';
     }
@@ -905,6 +919,9 @@
     }
 
     async function loadEvents(showMessage = false) {
+      if (showMessage) {
+        try { const c=localStorage.getItem('cal-cache'); if(c){state.events=JSON.parse(c);render();} } catch(e){}
+      }
       if (!SCRIPT_URL || SCRIPT_URL.includes('PEGA_AQUI')) {
         setStatus('Pega tu URL de Apps Script en la constante SCRIPT_URL.', true);
         return;
@@ -914,23 +931,20 @@
         const res = await fetch(`${SCRIPT_URL}${SCRIPT_URL.includes('?') ? '&' : '?'}t=${Date.now()}`, { cache: 'no-store' });
         const data = await res.json();
         const rawEvents = Array.isArray(data) ? data : (data.events || []);
-        state.events = rawEvents.map(ev => {
-          let who = (ev.who || 'fernando').toLowerCase().trim();
-          if (who === 'esposa') who = 'yolanda';
-          return {
-            ...ev,
-            date: normalizeDate(ev.date),
-            enddate: normalizeDate(ev.enddate || ev.date || ''),
-            time: normalizeTime(ev.time),
-            who,
-            type: ev.type || inferGuardiaType(ev.title || '')
-          };
-        });
+        state.events = rawEvents.map(ev => ({
+          ...ev,
+          date: normalizeDate(ev.date),
+          enddate: normalizeDate(ev.enddate || ev.date || ''),
+          time: normalizeTime(ev.time),
+          who: ((ev.who||'fernando').toLowerCase()==='esposa' ? 'yolanda' : (ev.who||'fernando').toLowerCase()),
+          type: ev.type || 'normal'
+        }));
+        try { localStorage.setItem('cal-cache', JSON.stringify(state.events)); } catch(e) {}
         render();
         if (showMessage) setStatus('Sincronizado.');
       } catch (err) {
         console.error(err);
-        setStatus('Error: ' + err.message, true);
+        setStatus('Error conectando con Google Sheets.', true);
       }
     }
 
@@ -947,7 +961,7 @@
             date: normalizeDate(ev.date),
             time: normalizeTime(ev.time),
             enddate: normalizeDate(ev.enddate || ev.date || ''),
-            who: ev.who === 'yolanda' ? 'yolanda' : (ev.who || 'fernando'),
+            who: ev.who || 'fernando',
             note: ev.note || '',
             createdBy: ev.createdBy || 'fernando',
             type: ev.type || 'normal'
@@ -960,9 +974,9 @@
           headers: { 'Content-Type': 'text/plain' },
           body: JSON.stringify(payload)
         });
-        setStatus('Guardado.');
-        await new Promise(resolve => setTimeout(resolve, 1500));
-        await loadEvents(false);
+        setStatus('Guardado');
+        try { localStorage.setItem('cal-cache', JSON.stringify(state.events)); } catch(e) {}
+        setTimeout(() => loadEvents(false), 4000);
       } catch (err) {
         console.error('saveEvents error', err);
         setStatus('Error al guardar.', true);
@@ -1021,23 +1035,14 @@
           const evEnd = normalizeDate(ev.enddate || ev.date || '');
           const isMulti = evEnd && evEnd !== evStart;
           let style = '';
-          let showTitle = true;
           if (isMulti) {
-            const prevDay = addDays(date, -1);
-            const nextDay = addDays(date, 1);
-            const prevIn = eventSpansDate(ev, toYMD(prevDay));
-            const nextIn = eventSpansDate(ev, toYMD(nextDay));
-            // Stretch across day boundaries
-            if (prevIn) {
-              style += 'border-top-left-radius:0;border-bottom-left-radius:0;margin-left:-12px;padding-left:4px;';
-              showTitle = false; // only show title on start day
-            }
-            if (nextIn) {
-              style += 'border-top-right-radius:0;border-bottom-right-radius:0;margin-right:-12px;padding-right:4px;';
-            }
+            const prevIn = eventSpansDate(ev, toYMD(addDays(date,-1)));
+            const nextIn = eventSpansDate(ev, toYMD(addDays(date, 1)));
+            if (prevIn) style += 'border-top-left-radius:0;border-bottom-left-radius:0;margin-left:-12px;padding-left:6px;';
+            if (nextIn) style += 'border-top-right-radius:0;border-bottom-right-radius:0;margin-right:-12px;padding-right:6px;';
           }
-          const displayTitle = (!isMulti || ymd === evStart) ? escapeHtml(title) : '';
-          return `<div class="event-pill ${ownerClass(ev.who)} ${isMulti ? 'multi-day' : ''}" style="${style}" data-id="${escapeHtml(ev.id)}">${displayTitle}${sub && !isMulti ? `<small>${escapeHtml(sub)}</small>` : ''}</div>`;
+          const showTitle = !isMulti || ymd === evStart;
+          return `<div class="event-pill ${ownerClass(ev.who)}" style="${style}" data-id="${escapeHtml(ev.id)}">${showTitle ? escapeHtml(title) : ''}${sub && showTitle ? `<small>${escapeHtml(sub)}</small>` : ''}</div>`;
         }).join('');
         const more = items.length > maxItems ? `<div class="more-pill">+${items.length - maxItems} más</div>` : '';
 
@@ -1183,7 +1188,70 @@
 
     function goToday() { state.currentDate = startOfDay(new Date()); render(); }
 
-    function bindEvents() {
+    // --- ICS IMPORT ---
+    let icsBuffer = [];
+    function parseICS(txt) {
+      const evs = [];
+      const lines = txt.replace(/\r\n/g,'\n').replace(/\r/g,'\n').replace(/\n[ \t]/g,'').split('\n');
+      let cur = null;
+      for (const l of lines) {
+        if (l === 'BEGIN:VEVENT') { cur = {}; continue; }
+        if (l === 'END:VEVENT' && cur) { if (cur.date && cur.title) evs.push(cur); cur = null; continue; }
+        if (!cur) continue;
+        if (l.startsWith('SUMMARY')) cur.title = l.replace(/^SUMMARY[^:]*:/, '').trim();
+        else if (l.startsWith('DTSTART')) {
+          const v = l.replace(/^DTSTART[^:]*:/, '').trim();
+          const dc = v.replace(/Z$/,'').split('T')[0];
+          if (dc.length >= 8) cur.date = dc.substring(0,4)+'-'+dc.substring(4,6)+'-'+dc.substring(6,8);
+          const tp = v.includes('T') ? v.replace(/Z$/,'').split('T')[1] : '';
+          cur.time = tp.length >= 4 ? tp.substring(0,2)+':'+tp.substring(2,4) : '';
+        } else if (l.startsWith('DTEND')) {
+          const v = l.replace(/^DTEND[^:]*:/, '').trim();
+          const dc = v.replace(/Z$/,'').split('T')[0];
+          if (dc.length >= 8) cur.enddate = dc.substring(0,4)+'-'+dc.substring(4,6)+'-'+dc.substring(6,8);
+        } else if (l.startsWith('DESCRIPTION')) {
+          cur.note = l.replace(/^DESCRIPTION[^:]*:/, '').replace(/\\n/g,' ').trim();
+        }
+      }
+      return evs;
+    }
+    function showIcsModal(parsed) {
+      icsBuffer = parsed;
+      const prev = document.getElementById('icsPreview');
+      prev.innerHTML = '';
+      const months = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+      parsed.forEach((ev, i) => {
+        const row = document.createElement('div');
+        row.style.cssText = 'display:flex;align-items:center;gap:8px;padding:5px 4px;border-bottom:1px solid #f0f4f8;';
+        const parts = (ev.date||'').split('-');
+        const lbl = (parts[2]?parseInt(parts[2]):'?')+' '+(months[parseInt(parts[1]||1)-1]||'')+' '+(parts[0]||'')+(ev.time?' '+ev.time:'');
+        row.innerHTML = '<input type="checkbox" id="ic_'+i+'" checked style="flex-shrink:0;width:16px;height:16px;cursor:pointer;"><label for="ic_'+i+'" style="cursor:pointer;flex:1;">'+lbl+' - '+ev.title+'</label>';
+        prev.appendChild(row);
+      });
+      document.getElementById('icsCount').textContent = parsed.length + ' eventos encontrados';
+      document.getElementById('icsOverlay').style.display = 'flex';
+    }
+    async function confirmIcsImport() {
+      const who = document.getElementById('icsWho').value;
+      const selected = icsBuffer.filter((_, i) => { const c = document.getElementById('ic_'+i); return c && c.checked; });
+      if (!selected.length) { alert('No has seleccionado ningun evento'); return; }
+      const existing = new Set(state.events.map(e => e.title+'_'+e.date));
+      const toAdd = selected.filter(ev => !existing.has(ev.title+'_'+ev.date)).map(ev => ({
+        id: 'ev_'+Date.now().toString(36)+'_'+Math.random().toString(36).slice(2,8),
+        title: ev.title, date: ev.date,
+        enddate: ev.enddate && ev.enddate !== ev.date ? ev.enddate : ev.date,
+        time: ev.time||'', who, note: ev.note||'',
+        createdBy: state.currentUser, type: inferGuardiaType(ev.title)
+      }));
+      const skipped = selected.length - toAdd.length;
+      state.events = [...state.events, ...toAdd];
+      render();
+      document.getElementById('icsOverlay').style.display = 'none';
+      setStatus('Importando '+toAdd.length+' eventos...');
+      await saveEvents();
+    }
+
+        function bindEvents() {
       document.getElementById('prevBtn').addEventListener('click', () => move(-1));
       document.getElementById('nextBtn').addEventListener('click', () => move(1));
       document.getElementById('todayBtn').addEventListener('click', goToday);
@@ -1193,12 +1261,22 @@
       document.getElementById('deleteBtn').addEventListener('click', handleDelete);
       els.overlay.addEventListener('click', (e) => { if (e.target === els.overlay) closeModal(); });
       document.querySelectorAll('.who-chip').forEach(btn => btn.addEventListener('click', () => { state.currentUser = btn.dataset.who; render(); }));
+      document.getElementById('importIcsBtn').addEventListener('click', () => document.getElementById('icsFileInput').click());
+      document.getElementById('icsFileInput').addEventListener('change', (e) => {
+        const f = e.target.files[0]; if (!f) return;
+        const r = new FileReader();
+        r.onload = (ev) => { const p = parseICS(ev.target.result); if (!p.length) { alert('No se encontraron eventos'); return; } showIcsModal(p); };
+        r.readAsText(f); e.target.value = '';
+      });
+      document.getElementById('icsCancelBtn').addEventListener('click', () => { document.getElementById('icsOverlay').style.display = 'none'; });
+      document.getElementById('icsImportBtn').addEventListener('click', confirmIcsImport);
+      document.getElementById('icsOverlay').addEventListener('click', (e) => { if (e.target === document.getElementById('icsOverlay')) document.getElementById('icsOverlay').style.display = 'none'; });
       document.querySelectorAll('.view-chip').forEach(btn => btn.addEventListener('click', () => { state.currentView = btn.dataset.view; render(); }));
     }
 
     function startAutoRefresh() {
       if (state.refreshTimer) clearInterval(state.refreshTimer);
-      state.refreshTimer = setInterval(() => loadEvents(false), 5000);
+      state.refreshTimer = setInterval(() => loadEvents(false), 60000);
     }
 
     function updateOrientationClass() {
