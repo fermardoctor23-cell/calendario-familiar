@@ -118,7 +118,7 @@
       min-height: 24px;
     }
 
-    .calendar-shell { padding: 12px; }
+    .calendar-shell { padding: 12px; overflow: visible; }
 
     .month-bar {
       display: grid;
@@ -189,11 +189,12 @@
       border: 1px solid var(--line);
       border-radius: 12px;
       padding: 4px 4px 4px;
-      overflow: hidden;
+      overflow: visible;
       background: #fff;
       cursor: pointer;
       display: flex;
       flex-direction: column;
+      clip-path: none;
     }
 
     .day-guardia {
@@ -247,7 +248,7 @@
       gap: 2px;
       flex: 1;
       min-height: 0;
-      overflow: hidden;
+      overflow: visible;
     }
 
     .event-pill {
@@ -263,6 +264,13 @@
       display: flex;
       flex-direction: column;
       justify-content: center;
+    }
+    .event-pill.multi-day {
+      position: relative;
+      z-index: 2;
+      border-left: none;
+      border-right: none;
+      box-shadow: none;
     }
 
     .event-pill small {
@@ -1009,19 +1017,27 @@
         const shown = items.slice(0, maxItems).map(ev => {
           const sub = window.innerWidth <= 760 ? '' : summarizeEvent(ev, ymd);
           const title = compactTitle(ev.title, window.innerWidth <= 760 ? 10 : 18);
-          const start = normalizeDate(ev.date);
-          const end = normalizeDate(ev.enddate || ev.date || '');
-          const isMulti = end && end !== start;
+          const evStart = normalizeDate(ev.date);
+          const evEnd = normalizeDate(ev.enddate || ev.date || '');
+          const isMulti = evEnd && evEnd !== evStart;
           let style = '';
+          let showTitle = true;
           if (isMulti) {
             const prevDay = addDays(date, -1);
             const nextDay = addDays(date, 1);
             const prevIn = eventSpansDate(ev, toYMD(prevDay));
             const nextIn = eventSpansDate(ev, toYMD(nextDay));
-            if (prevIn) style += 'border-top-left-radius:0;border-bottom-left-radius:0;margin-left:-4px;padding-left:7px;';
-            if (nextIn) style += 'border-top-right-radius:0;border-bottom-right-radius:0;margin-right:-4px;padding-right:7px;';
+            // Stretch across day boundaries
+            if (prevIn) {
+              style += 'border-top-left-radius:0;border-bottom-left-radius:0;margin-left:-12px;padding-left:4px;';
+              showTitle = false; // only show title on start day
+            }
+            if (nextIn) {
+              style += 'border-top-right-radius:0;border-bottom-right-radius:0;margin-right:-12px;padding-right:4px;';
+            }
           }
-          return `<div class="event-pill ${ownerClass(ev.who)}" style="${style}" data-id="${escapeHtml(ev.id)}">${escapeHtml(title)}${sub ? `<small>${escapeHtml(sub)}</small>` : ''}</div>`;
+          const displayTitle = (!isMulti || ymd === evStart) ? escapeHtml(title) : '';
+          return `<div class="event-pill ${ownerClass(ev.who)} ${isMulti ? 'multi-day' : ''}" style="${style}" data-id="${escapeHtml(ev.id)}">${displayTitle}${sub && !isMulti ? `<small>${escapeHtml(sub)}</small>` : ''}</div>`;
         }).join('');
         const more = items.length > maxItems ? `<div class="more-pill">+${items.length - maxItems} más</div>` : '';
 
