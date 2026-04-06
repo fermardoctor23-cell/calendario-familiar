@@ -1359,12 +1359,11 @@
     function parseSpanishEvents(text) {
       const today = new Date();
       today.setHours(0,0,0,0);
-
       function pad(n) { return String(n).padStart(2,'0'); }
       function toYMD(d) { return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate()); }
       function addDays(d, n) { const x=new Date(d); x.setDate(x.getDate()+n); return x; }
 
-      const WEEKDAYS = {lunes:1,martes:2,miercoles:3,miercoles:3,jueves:4,viernes:5,sabado:6,domingo:0};
+      const WEEKDAYS = {lunes:1,martes:2,'miércoles':3,miercoles:3,jueves:4,viernes:5,'sábado':6,sabado:6,domingo:0};
       const MONTHS_MAP = {enero:0,febrero:1,marzo:2,abril:3,mayo:4,junio:5,julio:6,agosto:7,septiembre:8,octubre:9,noviembre:10,diciembre:11};
 
       function nextWeekday(wd) {
@@ -1375,118 +1374,145 @@
       function inferType(t) {
         const s = t.toLowerCase();
         if (/guardia.*(malva|playas|malvarrosa)|(malva|playas|malvarrosa).*guardia/i.test(s)) return 'guardia_malvarrosa';
-        if (/guardia|urgencias|hcuv|hospital|guard/i.test(s)) return 'guardia_hcuv';
+        if (/guardia|urgencias|hcuv|hospital/i.test(s)) return 'guardia_hcuv';
         if (/cumple|cumplea|aniversario/i.test(s)) return 'cumpleanos';
-        if (/comida|cena|almuerzo|restaurante|merendola|barbacoa|vermut/i.test(s)) return 'comida';
-        if (/viaje|vuelo|avion|tren|frankfurt|madrid|barcelona|congreso|esh|jornada/i.test(s)) return 'viaje';
+        if (/comida|cena|almuerzo|restaurante|merendola|barbacoa|vermut|quedamos a comer|quedamos a cenar/i.test(s)) return 'comida';
+        if (/viaje|vuelo|avion|tren|frankfurt|madrid|barcelona/i.test(s)) return 'viaje';
+        if (/congreso|simposio|conferencia|esh|jornada/i.test(s)) return 'congreso';
         if (/reunion|meeting|junta|sesion|comite/i.test(s)) return 'reunion';
-        if (/congreso|simposio|conferencia|ponencia/i.test(s)) return 'congreso';
         if (/medico|veterinario|vet|consulta|cita|vacuna|pastilla|inyeccion|dental/i.test(s)) return 'medico';
         if (/vacaciones|vacacion/i.test(s)) return 'vacaciones';
         return 'normal';
       }
 
-      // Split text into event chunks by connectors
-      const chunks = text
-        .replace(/\s+/g, ' ')
-        .split(/\by\b|\bademás\b|\btambién\b|\bel lunes\b|\bel martes\b|\bel miércoles\b|\bel miercoles\b|\bel jueves\b|\bel viernes\b|\bel sábado\b|\bel sabado\b|\bel domingo\b|\bmañana\b|\bpasado\b/i)
-        .filter(c => c.trim().length > 3);
+      // --- STEP 1: Split text into event sentences smartly ---
+      // Strategy: split on EXPLICIT event boundaries only, NOT on "y" inside a sentence
+      // Boundaries:
+      //   - Semicolons and periods
+      //   - "y [ProperNoun/pronoun] [verb]" pattern: y Sofia tiene, y yo voy, y nosotros tenemos
+      //   - "también [verb]", "además [verb]"
+      //   - ", el lunes", ", el martes"... (comma + day)
+      //   - New date anchor starting a new clause after comma
 
-      // Re-split by re-adding the connector
-      const parts = [];
-      let remaining = text;
-      const splitters = remaining.match(/(el lunes|el martes|el miércoles|el miercoles|el jueves|el viernes|el sábado|el sabado|el domingo|mañana|pasado mañana|el dia \d+|el \d+|el próximo|el proximo|\d+ de \w+|esta semana|este fin|[\.,;])/gi) || [];
+      // First, normalize
+      let t = text.trim();
 
-      // Simpler approach: find all date anchors and split around them
+      // Split on hard boundaries first
+      let segments = t.split(/[;]/).map(s => s.trim()).filter(Boolean);
+
+      // Then split each segment on soft boundaries
+      const finalSegments = [];
+      for (const seg of segments) {
+        // Split on: "y [Capital][a-z]+ (tiene|va|llega|es|está|hay|tenemos|tengo|vamos|viene|empieza|sale|cumple)"
+        // This catches "y Sofía tiene" but NOT "Javi y Lizárraga"
+        const parts = seg.split(
+          /(?:,\s*|\s+)(?=(?:el\s+)?(?:lunes|martes|mi[eé]rcoles|jueves|viernes|s[aá]bado|domingo|ma[nñ]ana|pasado\s+ma[nñ]ana|el\s+\d{1,2}|\d{1,2}\s+de\s+[a-záéíóú]+)\b)/i
+        );
+        if (parts.length > 1) {
+          finalSegments.push(...parts.map(p => p.trim()).filter(Boolean));
+        } else {
+          // Try splitting on "y [ProperNoun/pronoun] [conjugated verb]"
+          const verbPattern = /\s+y\s+(?=[A-ZÁÉÍÓÚÑ][a-záéíóúñ]+\s+(?:tiene|va|tengo|tenemos|vamos|llega|llego|llegamos|es|está|hay|sale|salgo|salimos|cumple|empieza|comemos|cenamos|toca|doy|damos))/;
+          const subparts = seg.split(verbPattern);
+          if (subparts.length > 1) {
+            finalSegments.push(...subparts.map(p => p.trim()).filter(Boolean));
+          } else {
+            finalSegments.push(seg);
+          }
+        }
+      }
+
+      // --- STEP 2: Parse each segment ---
+      let lastDate = null;
       const events = [];
-      const sentences = text.split(/[,;]|\sy\s(?=(?:el|la|mañana|pasado|esta|este|\d))/i).map(s=>s.trim()).filter(Boolean);
 
-      for (const sentence of sentences) {
-        if (!sentence || sentence.length < 3) continue;
-        const s = sentence.toLowerCase().trim();
+      for (const segment of finalSegments) {
+        if (!segment || segment.length < 3) continue;
+        const s = segment.toLowerCase().trim();
         let date = null;
         let enddate = null;
         let time = '';
 
-        // Date parsing
-        // "el lunes", "el martes"...
-        for (const [name, wd] of Object.entries(WEEKDAYS)) {
-          if (new RegExp('\\b(el\\s+)?(pr[oó]ximo\\s+)?'+name+'\\b').test(s)) {
-            date = nextWeekday(wd); break;
-          }
-        }
-        // "mañana"
-        if (!date && /\bma[nñ]ana\b/.test(s)) date = addDays(today, 1);
-        // "pasado mañana"
-        if (!date && /\bpasado\s+ma[nñ]ana\b/.test(s)) date = addDays(today, 2);
-        // "hoy"
-        if (!date && /\bhoy\b/.test(s)) date = new Date(today);
-        // "el 15 de mayo", "15 de mayo", "el 15"
-        const dateMatch = s.match(/(?:el\s+)?(\d{1,2})\s+de\s+([a-záéíóú]+)/);
-        if (!date && dateMatch) {
-          const mo = MONTHS_MAP[dateMatch[2].toLowerCase()];
+        // Date detection
+        // "el dia 18 de abril", "18 de abril", "el 18 de abril"
+        const fullDateMatch = s.match(/(?:el\s+(?:d[ií]a\s+)?)(\d{1,2})\s+de\s+([a-záéíóú]+)/);
+        if (fullDateMatch) {
+          const mo = MONTHS_MAP[fullDateMatch[2].toLowerCase()];
           if (mo !== undefined) {
-            const d = new Date(today.getFullYear(), mo, parseInt(dateMatch[1]));
-            if (d < today) d.setFullYear(d.getFullYear()+1);
+            const yr = today.getFullYear();
+            const d = new Date(yr, mo, parseInt(fullDateMatch[1]));
+            if (d < today) d.setFullYear(yr+1);
             date = d;
           }
         }
-        // "el 15" (bare day)
-        const bareDay = s.match(/(?:el|dia)\s+(\d{1,2})(?!\s+de)/);
-        if (!date && bareDay) {
-          const d = new Date(today.getFullYear(), today.getMonth(), parseInt(bareDay[1]));
-          if (d <= today) d.setMonth(d.getMonth()+1);
-          date = d;
-        }
-        // "esta semana" / "esta noche"
-        if (!date && /\besta\s+semana\b/.test(s)) date = addDays(today, 2);
-        if (!date && /\besta\s+noche\b/.test(s)) date = new Date(today);
-
-        // If still no date, skip unless very short text (might be continuation)
+        // "el lunes", "el martes"... (next occurrence)
         if (!date) {
-          // Try to inherit from previous event or use today+1
-          if (events.length > 0) date = new Date(today);
-          else continue;
+          for (const [name, wd] of Object.entries(WEEKDAYS)) {
+            if (new RegExp('(?:el\\s+)?(?:pr[oó]ximo\\s+)?\\b'+name+'\\b').test(s)) {
+              date = nextWeekday(wd); break;
+            }
+          }
+        }
+        // "mañana", "pasado mañana", "hoy"
+        if (!date && /\bma[nñ]ana\b/.test(s) && !/pasado/.test(s)) date = addDays(today, 1);
+        if (!date && /pasado\s+ma[nñ]ana/.test(s)) date = addDays(today, 2);
+        if (!date && /\bhoy\b/.test(s)) date = new Date(today);
+        // "el 15" bare
+        if (!date) {
+          const bareDay = s.match(/(?:el|d[ií]a)\s+(\d{1,2})(?!\s+de)/);
+          if (bareDay) {
+            const d = new Date(today.getFullYear(), today.getMonth(), parseInt(bareDay[1]));
+            if (d <= today) d.setMonth(d.getMonth()+1);
+            date = d;
+          }
+        }
+        // Inherit last date if none found
+        if (!date && lastDate) date = new Date(lastDate);
+        if (!date) continue;
+        lastDate = date;
+
+        // End date
+        const untilFullDate = s.match(/hasta\s+(?:el\s+)?(\d{1,2})\s+de\s+([a-záéíóú]+)/);
+        if (untilFullDate) {
+          const mo = MONTHS_MAP[untilFullDate[2].toLowerCase()];
+          if (mo !== undefined) enddate = new Date(date.getFullYear(), mo, parseInt(untilFullDate[1]));
+        }
+        if (!enddate) {
+          for (const [name, wd] of Object.entries(WEEKDAYS)) {
+            if (new RegExp('hasta\\s+(?:el\\s+)?'+name).test(s)) { enddate = nextWeekday(wd); break; }
+          }
         }
 
-        // Time parsing
-        const timeMatch = s.match(/a\s+las?\s+(\d{1,2})(?::(\d{2}))?\s*(de\s+la\s+(ma[nñ]ana|tarde|noche))?/);
+        // Time: "a las 5", "a las 17:30", "a las 5 de la tarde"
+        const timeMatch = s.match(/a\s+las?\s+(\d{1,2})(?::(\d{2}))?\s*(?:de\s+la\s+(ma[nñ]ana|tarde|noche))?/);
         if (timeMatch) {
           let h = parseInt(timeMatch[1]);
-          const min = timeMatch[2] ? timeMatch[2] : '00';
-          const period = timeMatch[4];
-          if (period === 'tarde' || period === 'noche') { if (h < 12) h += 12; }
-          else if (period === 'mañana' || period === 'manana') { if (h === 12) h = 0; }
-          else if (h < 8) h += 12; // assume PM if ambiguous small number
+          const min = timeMatch[2] || '00';
+          const period = timeMatch[3] || '';
+          if (/tarde|noche/.test(period) && h < 12) h += 12;
+          else if (/ma[nñ]ana/.test(period) && h === 12) h = 0;
+          else if (!period && h > 0 && h < 9) h += 12; // ambiguous small numbers = PM
           time = pad(h)+':'+min;
         }
 
-        // End date "hasta el X", "hasta el viernes"
-        const untilMatch = s.match(/hasta\s+(?:el\s+)?(\d{1,2})(?:\s+de\s+([a-záéíóú]+))?/);
-        if (untilMatch && date) {
-          const endDay = parseInt(untilMatch[1]);
-          const endMo = untilMatch[2] ? MONTHS_MAP[untilMatch[2].toLowerCase()] : date.getMonth();
-          const endD = new Date(date.getFullYear(), endMo !== undefined ? endMo : date.getMonth(), endDay);
-          if (endD >= date) enddate = endD;
-        }
-        for (const [name, wd] of Object.entries(WEEKDAYS)) {
-          const untilWd = s.match(new RegExp('hasta\\s+(?:el\\s+)?'+name));
-          if (untilWd && date) { enddate = nextWeekday(wd); break; }
-        }
-
-        // Clean title: remove date/time phrases
-        let title = sentence
-          .replace(/(?:el\s+)?(?:próximo\s+)?(?:lunes|martes|miércoles|miercoles|jueves|viernes|sábado|sabado|domingo)/gi, '')
-          .replace(/mañana|pasado\s+mañana|hoy/gi, '')
-          .replace(/\d{1,2}\s+de\s+[a-záéíóú]+/gi, '')
-          .replace(/(?:el|dia)\s+\d{1,2}/gi, '')
-          .replace(/a\s+las?\s+\d{1,2}(?::\d{2})?(?:\s+de\s+la\s+(?:mañana|tarde|noche))?/gi, '')
-          .replace(/hasta\s+(?:el\s+)?(?:\d{1,2}|\w+)/gi, '')
+        // Build clean title
+        let title = segment
+          // Remove date expressions
+          .replace(/(?:el\s+)?(?:d[ií]a\s+)?\d{1,2}\s+de\s+[a-záéíóúA-ZÁÉÍÓÚ]+/gi, '')
+          .replace(/(?:el\s+)?(?:pr[oó]ximo\s+)?(?:lunes|martes|mi[eé]rcoles|jueves|viernes|s[aá]bado|domingo)/gi, '')
+          .replace(/\bma[nñ]ana\b/gi, '').replace(/pasado\s+ma[nñ]ana/gi, '').replace(/\bhoy\b/gi, '')
+          .replace(/(?:el|d[ií]a)\s+\d{1,2}(?!\s+de)/gi, '')
+          // Remove time expressions
+          .replace(/a\s+las?\s+\d{1,2}(?::\d{2})?\s*(?:de\s+la\s+(?:ma[nñ]ana|tarde|noche))?/gi, '')
+          // Remove "hasta X"
+          .replace(/hasta\s+(?:el\s+)?(?:\d{1,2}(?:\s+de\s+\w+)?|\w+)/gi, '')
+          // Remove filler words at start
+          .replace(/^(?:tenemos?|tengo|hay|es|está)\s+/i, '')
+          // Clean up
           .replace(/\s{2,}/g, ' ').trim()
-          .replace(/^[,;\s]+|[,;\s]+$/g, '').trim();
+          .replace(/^[,;\s\-]+|[,;\s\-]+$/g, '').trim();
 
         if (!title || title.length < 2) continue;
-        // Capitalize first letter
         title = title.charAt(0).toUpperCase() + title.slice(1);
 
         events.push({
@@ -1495,15 +1521,15 @@
           date: toYMD(date),
           enddate: enddate ? toYMD(enddate) : toYMD(date),
           time,
-          who: 'fernando',
+          who: state.currentUser || 'fernando',
           note: '',
           createdBy: state.currentUser || 'fernando',
-          type: inferType(title + ' ' + sentence)
+          type: inferType(title + ' ' + segment)
         });
       }
-
       return events;
     }
+
 
     function parseEventsWithAI() {
       const input = document.getElementById('ai-input').value.trim();
