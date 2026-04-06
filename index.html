@@ -590,9 +590,66 @@
       .form-grid { grid-template-columns: 1fr; }
       .modal { border-radius: 20px 20px 0 0; padding: 14px; }
     }
+
+    /* PIN SCREEN */
+    #pin-screen {
+      position: fixed; inset: 0; background: linear-gradient(180deg,#ebf2ff 0px,var(--bg) 180px);
+      display: flex; align-items: center; justify-content: center; z-index: 9999; padding: 2rem;
+    }
+    .pin-card {
+      background: white; border-radius: 22px; padding: 2.5rem 2rem;
+      max-width: 340px; width: 100%; text-align: center;
+      box-shadow: 0 10px 40px rgba(15,23,42,0.12);
+    }
+    .pin-card h2 { margin: 0 0 6px; font-size: 1.4rem; }
+    .pin-card p { color: var(--muted); font-size: .9rem; margin: 0 0 1.5rem; }
+    .pin-dots { display: flex; justify-content: center; gap: 14px; margin-bottom: 1.5rem; }
+    .pin-dot { width: 18px; height: 18px; border-radius: 50%; border: 2px solid #cbd5e1; background: transparent; transition: all .15s; }
+    .pin-dot.filled { background: var(--primary); border-color: var(--primary); }
+    .pin-dot.error { background: #ef4444; border-color: #ef4444; animation: shake .3s; }
+    @keyframes shake { 0%,100%{transform:translateX(0)} 25%{transform:translateX(-6px)} 75%{transform:translateX(6px)} }
+    .pin-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 10px; max-width: 260px; margin: 0 auto 1rem; }
+    .pin-btn {
+      aspect-ratio: 1; border: 1px solid #e2e8f0; border-radius: 14px;
+      background: white; font-size: 1.4rem; font-weight: 700; cursor: pointer;
+      transition: all .1s; display: flex; align-items: center; justify-content: center;
+    }
+    .pin-btn:hover { background: #f1f5f9; border-color: var(--primary); }
+    .pin-btn:active { transform: scale(.93); background: var(--primary-soft); }
+    .pin-err { color: #ef4444; font-size: .85rem; min-height: 1.1rem; margin-top: .5rem; }
+    .pin-hint { color: var(--muted); font-size: .78rem; margin-top: 1rem; }
   </style>
 </head>
 <body>
+  <div id="pin-screen">
+    <div class="pin-card">
+      <h2>Calendario Familiar</h2>
+      <p id="pin-label">Introduce tu PIN</p>
+      <div class="pin-dots">
+        <div class="pin-dot" id="pd0"></div>
+        <div class="pin-dot" id="pd1"></div>
+        <div class="pin-dot" id="pd2"></div>
+        <div class="pin-dot" id="pd3"></div>
+      </div>
+      <div class="pin-grid">
+        <button class="pin-btn" onclick="pinPress('1')">1</button>
+        <button class="pin-btn" onclick="pinPress('2')">2</button>
+        <button class="pin-btn" onclick="pinPress('3')">3</button>
+        <button class="pin-btn" onclick="pinPress('4')">4</button>
+        <button class="pin-btn" onclick="pinPress('5')">5</button>
+        <button class="pin-btn" onclick="pinPress('6')">6</button>
+        <button class="pin-btn" onclick="pinPress('7')">7</button>
+        <button class="pin-btn" onclick="pinPress('8')">8</button>
+        <button class="pin-btn" onclick="pinPress('9')">9</button>
+        <button class="pin-btn" onclick="pinPress('back')" style="font-size:1rem;">&#9003;</button>
+        <button class="pin-btn" onclick="pinPress('0')">0</button>
+        <button class="pin-btn" onclick="pinPress('ok')" style="font-size:.9rem;background:var(--primary);color:white;border-color:var(--primary);">OK</button>
+      </div>
+      <div class="pin-err" id="pin-err"></div>
+      <div class="pin-hint">El PIN se recordará en este dispositivo</div>
+    </div>
+  </div>
+
   <div class="app">
     <div class="card topbar">
       <div class="title-wrap">
@@ -747,7 +804,65 @@
   <script>
     const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbysAi21EZfmPKdqWEN9W0BZJEioTMMECHetjqk_hmk3WurLGfRom_U26ZHPjNqVH8WJ/exec';
 
-    const state = {
+    // ---- PIN SECURITY ----
+    const CORRECT_PIN = 'KA-220_HED'; // Cambia esto por tu PIN
+    const PIN_KEY = 'cal-pin-ok';
+    let pinEntry = '';
+
+    function pinPress(val) {
+      const err = document.getElementById('pin-err');
+      err.textContent = '';
+      if (val === 'back') {
+        pinEntry = pinEntry.slice(0, -1);
+      } else if (val === 'ok') {
+        checkPin();
+        return;
+      } else {
+        if (pinEntry.length >= 4) return;
+        pinEntry += val;
+        if (pinEntry.length === 4) { setTimeout(checkPin, 120); }
+      }
+      updatePinDots();
+    }
+
+    function updatePinDots(error) {
+      for (let i = 0; i < 4; i++) {
+        const d = document.getElementById('pd' + i);
+        d.className = 'pin-dot';
+        if (error) d.classList.add('error');
+        else if (i < pinEntry.length) d.classList.add('filled');
+      }
+    }
+
+    function checkPin() {
+      if (pinEntry === CORRECT_PIN) {
+        try { localStorage.setItem(PIN_KEY, '1'); } catch(e) {}
+        document.getElementById('pin-screen').style.display = 'none';
+      } else {
+        updatePinDots(true);
+        document.getElementById('pin-err').textContent = 'PIN incorrecto';
+        setTimeout(() => { pinEntry = ''; updatePinDots(); document.getElementById('pin-err').textContent = ''; }, 1000);
+      }
+    }
+
+    // Check if already unlocked on this device
+    (function() {
+      try {
+        if (localStorage.getItem(PIN_KEY) === '1') {
+          document.getElementById('pin-screen').style.display = 'none';
+        }
+      } catch(e) {}
+    })();
+
+    // Allow keyboard input for PIN
+    document.addEventListener('keydown', (e) => {
+      if (document.getElementById('pin-screen').style.display === 'none') return;
+      if (e.key >= '0' && e.key <= '9') pinPress(e.key);
+      else if (e.key === 'Backspace') pinPress('back');
+      else if (e.key === 'Enter') pinPress('ok');
+    });
+
+        const state = {
       events: [],
       currentUser: 'fernando',
       currentView: 'month',
