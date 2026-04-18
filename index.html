@@ -831,6 +831,7 @@
       const err = document.getElementById('pin-err');
       if (input.value === CORRECT_PIN) {
         try { localStorage.setItem(PIN_KEY, '1'); } catch(e) {}
+        setCookie(PIN_KEY, '1', 365);
         document.getElementById('pin-screen').style.display = 'none';
         input.value = '';
       } else {
@@ -847,14 +848,28 @@
       else { input.type = 'password'; btn.innerHTML = '&#128065;'; }
     }
 
+    function setCookie(name, val, days) {
+      const d = new Date();
+      d.setTime(d.getTime() + days*24*60*60*1000);
+      document.cookie = name+'='+val+';expires='+d.toUTCString()+';path=/;SameSite=Strict';
+    }
+    function getCookie(name) {
+      const ca = document.cookie.split(';');
+      for (let c of ca) {
+        c = c.trim();
+        if (c.startsWith(name+'=')) return c.substring(name.length+1);
+      }
+      return '';
+    }
+
     (function() {
-      try {
-        if (localStorage.getItem(PIN_KEY) === '1') {
-          document.getElementById('pin-screen').style.display = 'none';
-        } else {
-          setTimeout(() => document.getElementById('pin-input').focus(), 100);
-        }
-      } catch(e) {}
+      try { localStorage.setItem(PIN_KEY+'_test','1'); } catch(e) {}
+      const unlocked = getCookie(PIN_KEY) === '1' || localStorage.getItem(PIN_KEY) === '1';
+      if (unlocked) {
+        document.getElementById('pin-screen').style.display = 'none';
+      } else {
+        setTimeout(() => document.getElementById('pin-input').focus(), 100);
+      }
     })();
 
         const state = {
@@ -1531,48 +1546,68 @@
     }
 
 
-    function parseEventsWithAI() {
+    async function parseEventsWithAI() {
       const input = document.getElementById('ai-input').value.trim();
       if (!input) { document.getElementById('ai-status').textContent = 'Escribe o habla algo primero.'; return; }
 
+      const parseBtn = document.getElementById('aiParseBtn');
       const statusEl = document.getElementById('ai-status');
       const resultEl = document.getElementById('ai-result');
       const addBtn = document.getElementById('aiAddBtn');
 
+      parseBtn.disabled = true;
+      parseBtn.textContent = 'Interpretando...';
       statusEl.style.color = 'var(--muted)';
-      statusEl.textContent = 'Interpretando...';
+      statusEl.textContent = 'Consultando IA...';
+      resultEl.style.display = 'none';
+      addBtn.style.display = 'none';
+      aiParsedEvents = [];
 
-      aiParsedEvents = parseSpanishEvents(input);
+      try {
+        const today = new Date().toISOString().split('T')[0];
+        const res = await fetch(SCRIPT_URL + '?action=ai&text=' + encodeURIComponent(input) + '&today=' + today, { redirect: 'follow' });
+        const data = await res.json();
 
-      if (!aiParsedEvents.length) {
+        if (data.error) throw new Error(data.error);
+        if (!Array.isArray(data) || !data.length) {
+          // Fallback to local parser
+          aiParsedEvents = parseSpanishEvents(input);
+          if (!aiParsedEvents.length) throw new Error('No se detectaron eventos. Intenta incluir fechas: "el lunes", "el 18 de abril"...');
+        } else {
+          aiParsedEvents = data.map(ev => ({
+            ...ev,
+            id: 'ev_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2,7),
+            who: ev.who || state.currentUser || 'fernando',
+            createdBy: state.currentUser || 'fernando'
+          }));
+        }
+
+        const list = document.getElementById('ai-events-list');
+        list.innerHTML = '';
+        const months = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+        const typeLabels = {guardia_hcuv:'🏥',guardia_malvarrosa:'🚑',cumpleanos:'🎂',comida:'🍽️',viaje:'✈️',reunion:'👥',congreso:'🎓',medico:'🩺',vacaciones:'🏖️',normal:'📅'};
+        aiParsedEvents.forEach(ev => {
+          const parts = (ev.date||'').split('-');
+          const dateLabel = (parts[2]?parseInt(parts[2]):'?')+' '+(months[parseInt(parts[1]||1)-1]||'')+' '+(parts[0]||'');
+          const timeLabel = ev.time ? ' · '+ev.time : '';
+          const endLabel = ev.enddate && ev.enddate !== ev.date ? ' → '+ev.enddate.split('-')[2]+' '+(months[parseInt(ev.enddate.split('-')[1]||1)-1]||'') : '';
+          const icon = typeLabels[ev.type] || '📅';
+          const row = document.createElement('div');
+          row.style.cssText = 'padding:8px 6px;border-bottom:1px solid #f0f4f8;display:flex;align-items:center;gap:10px;font-size:.88rem;';
+          row.innerHTML = '<span style="font-size:1.1rem;">'+icon+'</span><div><strong>'+ev.title+'</strong><div style="color:var(--muted);font-size:.8rem;">'+dateLabel+endLabel+timeLabel+'</div></div>';
+          list.appendChild(row);
+        });
+        resultEl.style.display = 'block';
+        addBtn.style.display = 'inline-block';
+        statusEl.style.color = '#16a34a';
+        statusEl.textContent = aiParsedEvents.length + ' evento(s) detectado(s). Revisa y confirma.';
+      } catch(err) {
         statusEl.style.color = '#ef4444';
-        statusEl.textContent = 'No se detectaron eventos. Intenta ser mas especifico con fechas: "el lunes tengo guardia", "el 15 de mayo comida".';
-        resultEl.style.display = 'none';
-        addBtn.style.display = 'none';
-        return;
+        statusEl.textContent = 'Error: ' + (err.message || 'No se pudo interpretar');
+      } finally {
+        parseBtn.disabled = false;
+        parseBtn.textContent = 'Interpretar';
       }
-
-      const list = document.getElementById('ai-events-list');
-      list.innerHTML = '';
-      const months = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
-      const typeLabels = {guardia_hcuv:'🏥',guardia_malvarrosa:'🚑',cumpleanos:'🎂',comida:'🍽️',viaje:'✈️',reunion:'👥',congreso:'🎓',medico:'🩺',vacaciones:'🏖️',normal:'📅'};
-
-      aiParsedEvents.forEach(ev => {
-        const parts = (ev.date||'').split('-');
-        const dateLabel = (parts[2]?parseInt(parts[2]):'?')+' '+(months[parseInt(parts[1]||1)-1]||'')+' '+(parts[0]||'');
-        const timeLabel = ev.time ? ' · '+ev.time : '';
-        const endLabel = ev.enddate && ev.enddate !== ev.date ? ' → '+ev.enddate.split('-')[2]+' '+(months[parseInt(ev.enddate.split('-')[1]||1)-1]||'') : '';
-        const icon = typeLabels[ev.type] || '📅';
-        const row = document.createElement('div');
-        row.style.cssText = 'padding:8px 6px;border-bottom:1px solid #f0f4f8;display:flex;align-items:center;gap:10px;font-size:.88rem;';
-        row.innerHTML = '<span style="font-size:1.1rem;">'+icon+'</span><div><strong>'+ev.title+'</strong><div style="color:var(--muted);font-size:.8rem;">'+dateLabel+endLabel+timeLabel+'</div></div>';
-        list.appendChild(row);
-      });
-
-      resultEl.style.display = 'block';
-      addBtn.style.display = 'inline-block';
-      statusEl.style.color = '#16a34a';
-      statusEl.textContent = aiParsedEvents.length + ' evento(s) detectado(s). Revisa y confirma.';
     }
 
     async function addAIEvents() {
