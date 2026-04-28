@@ -12,93 +12,148 @@
     :root {
       --sat:#edf6ff; --sat-txt:#1a73e8;
       --sun:#fff0f5; --sun-txt:#c62828;
-      --fernando:#dbeafe; --yolanda:#fde7f3; --both:#e8f8ea;
-      --guardia-bg:#ffdede; --guardia-bd:#ff9999;
-      --malva-bg:#f0ddff; --malva-bd:#c084fc;
-      --line:#e5e7eb; --muted:#6b7280; --text:#111827;
-      --primary:#2563eb; --primary-soft:#eff6ff;
+      --fernando:#c8dcff; --yolanda:#fcd7ee; --both:#c6f0d0;
+      --guardia-bg:#ffc8c8; --malva-bg:#e8ccff;
+      --line:#d1d5db; --muted:#6b7280; --text:#111827;
+      --primary:#2563eb;
       --top:env(safe-area-inset-top,44px);
       --bot:env(safe-area-inset-bottom,20px);
     }
     *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
-    html{height:100%;}
+    html,body{height:100%;overflow:hidden;}
     body{
       font-family:-apple-system,"Helvetica Neue",Arial,sans-serif;
       background:#fff; color:var(--text);
-      height:100vh; height:100dvh;
-      display:flex; flex-direction:column; overflow:hidden;
+      height:100dvh;
+      display:flex; flex-direction:column;
       padding-top:var(--top);
     }
-    /* HEADER */
-    .hdr{display:flex;align-items:center;gap:4px;padding:5px 8px 4px;border-bottom:1px solid var(--line);background:#fff;flex-shrink:0;}
-    .hdr-month{flex:1;font-size:1.2rem;font-weight:800;letter-spacing:-.02em;text-align:center;}
-    .hdr-nav{width:34px;height:34px;background:none;border:none;font-size:1.4rem;font-weight:700;color:var(--primary);cursor:pointer;display:flex;align-items:center;justify-content:center;border-radius:50%;}
-    .hdr-nav:active{background:var(--primary-soft);}
-    .hdr-today{font-size:.75rem;font-weight:700;color:var(--primary);background:var(--primary-soft);border:none;border-radius:8px;padding:5px 9px;cursor:pointer;white-space:nowrap;}
-    /* FILTERS */
-    .filters{display:flex;align-items:center;gap:5px;padding:3px 8px;border-bottom:1px solid var(--line);overflow-x:auto;flex-shrink:0;background:#fafafa;-webkit-overflow-scrolling:touch;}
-    .filters::-webkit-scrollbar{display:none;}
-    [data-who],[data-view],.achip{border-radius:999px;padding:4px 9px;font-size:.72rem;font-weight:700;white-space:nowrap;cursor:pointer;border:1.5px solid transparent;background:#f3f4f6;color:#374151;flex-shrink:0;}
-    [data-who].active-who[data-who="fernando"]{background:var(--fernando);border-color:#93c5fd;color:#1e40af;}
-    [data-who].active-who[data-who="yolanda"]{background:var(--yolanda);border-color:#f9a8d4;color:#9d174d;}
-    [data-who].active-who[data-who="both"]{background:var(--both);border-color:#86efac;color:#166534;}
-    [data-view].active-view{background:var(--primary);color:#fff;border-color:var(--primary);}
-    .chip-sep{width:1px;height:16px;background:var(--line);flex-shrink:0;}
-    .achip.ai{background:#ede9fe;color:#5b21b6;border-color:#c4b5fd;}
-    #statusText{font-size:.65rem;color:var(--muted);white-space:nowrap;flex-shrink:0;}
-    /* WEEKDAY ROW */
-    .wday-row{display:grid;grid-template-columns:repeat(7,1fr);border-bottom:2px solid var(--line);background:#fafafa;flex-shrink:0;}
-    .wday{text-align:center;font-size:.72rem;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.03em;padding:4px 0;}
-    .wday.sat{color:var(--sat-txt);} .wday.sun{color:var(--sun-txt);}
-    /* MONTH GRID */
-    #cal-body{flex:1;min-height:0;display:flex;flex-direction:column;overflow:hidden;}
-    #monthGrid{display:grid;grid-template-columns:repeat(7,1fr);grid-auto-rows:1fr;flex:1;min-height:0;border-left:1px solid var(--line);}
-    .day{border-right:1px solid var(--line);border-bottom:1px solid var(--line);padding:3px 2px 2px;display:flex;flex-direction:column;cursor:pointer;overflow:hidden;position:relative;background:#fff;}
-    .day.other-month{background:#fafcff;} .day.other-month .day-num{color:#c5ccd8;}
-    .day.sat{background:var(--sat);} .day.sun{background:var(--sun);}
+
+    /* ── HEADER ── */
+    .hdr{
+      display:flex; align-items:center;
+      padding:6px 10px 5px;
+      background:#fff;
+      border-bottom:1px solid var(--line);
+      flex-shrink:0; gap:6px;
+    }
+    .hdr-month{
+      flex:1; font-size:1.3rem; font-weight:800;
+      letter-spacing:-.02em;
+    }
+    .hdr-nav{
+      width:38px; height:38px; border:none; background:none;
+      font-size:1.5rem; color:var(--primary); cursor:pointer;
+      display:flex; align-items:center; justify-content:center;
+      border-radius:50%; flex-shrink:0;
+    }
+    .hdr-nav:active{background:#eff6ff;}
+    .hdr-right{display:flex;align-items:center;gap:6px;flex-shrink:0;}
+    .hdr-who{
+      font-size:.72rem; font-weight:700; padding:5px 10px;
+      border:1.5px solid var(--line); border-radius:999px;
+      background:#f9fafb; cursor:pointer; color:#374151;
+    }
+    .hdr-who.active-who[data-who="fernando"]{background:var(--fernando);border-color:#93c5fd;color:#1e40af;}
+    .hdr-who.active-who[data-who="yolanda"]{background:var(--yolanda);border-color:#f9a8d4;color:#9d174d;}
+    .hdr-who.active-who[data-who="both"]{background:var(--both);border-color:#86efac;color:#166534;}
+    .hdr-menu{
+      width:34px;height:34px;border:none;background:none;
+      font-size:1.3rem;cursor:pointer;color:var(--muted);
+      display:flex;align-items:center;justify-content:center;
+      border-radius:50%;
+    }
+    .hdr-menu:active{background:#f3f4f6;}
+
+    /* ── WEEKDAY LABELS ── */
+    .wdays{
+      display:grid; grid-template-columns:repeat(7,1fr);
+      background:#fafafa; border-bottom:1.5px solid var(--line);
+      flex-shrink:0;
+    }
+    .wday{
+      text-align:center; padding:5px 0;
+      font-size:.78rem; font-weight:800;
+      color:var(--muted); text-transform:uppercase; letter-spacing:.02em;
+    }
+    .wday.sat{color:var(--sat-txt);}
+    .wday.sun{color:var(--sun-txt);}
+
+    /* ── MONTH GRID ── */
+    #monthGrid{
+      display:grid;
+      grid-template-columns:repeat(7,1fr);
+      grid-auto-rows:1fr;
+      flex:1; min-height:0;
+    }
+    .day{
+      border-right:1px solid var(--line);
+      border-bottom:1px solid var(--line);
+      padding:3px 3px 2px;
+      display:flex; flex-direction:column;
+      cursor:pointer; overflow:hidden; position:relative;
+      background:#fff;
+    }
+    .day:nth-child(7n){border-right:none;}
+    .day.other-month{background:#f8f9fb;}
+    .day.other-month .day-num-inner{color:#c5ccd8;}
+    .day.sat{background:var(--sat);}
+    .day.sun{background:var(--sun);}
     .day.today{box-shadow:inset 0 0 0 2px var(--primary);}
     .day.day-guardia{background:var(--guardia-bg)!important;}
     .day.day-malvarrosa{background:var(--malva-bg)!important;}
-    .day:active{filter:brightness(.96);}
-    .day-num{font-size:.82rem;font-weight:700;line-height:1;margin-bottom:2px;display:flex;align-items:center;justify-content:space-between;}
-    .day.sat .day-num{color:var(--sat-txt);} .day.sun .day-num{color:var(--sun-txt);}
-    .today-circle{background:var(--primary);color:#fff!important;border-radius:50%;width:20px;height:20px;display:inline-flex;align-items:center;justify-content:center;font-size:.72rem;}
-    .day-cnt{font-size:.6rem;color:var(--muted);font-weight:700;}
-    .events-stack{display:flex;flex-direction:column;gap:1px;flex:1;min-height:0;overflow:hidden;}
-    .event-pill{font-size:.63rem;font-weight:700;padding:1px 3px;border-radius:3px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;line-height:1.4;flex-shrink:0;}
-    .owner-fernando{background:var(--fernando);} .owner-yolanda{background:var(--yolanda);}
-    .owner-both{background:var(--both);} .owner-default{background:#f3f4f6;}
-    .more-lbl{font-size:.57rem;color:var(--muted);font-weight:700;padding-left:2px;}
-    /* WEEK VIEW */
-    #weekView{flex:1;min-height:0;display:grid;grid-template-columns:repeat(7,1fr);overflow-y:auto;-webkit-overflow-scrolling:touch;border-left:1px solid var(--line);}
-    #dayView{flex:1;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:10px;}
-    .week-col{border-right:1px solid var(--line);padding:5px 3px;display:flex;flex-direction:column;gap:4px;}
-    .week-col.sat{background:var(--sat);} .week-col.sun{background:var(--sun);}
-    .week-head{font-size:.6rem;font-weight:800;color:var(--muted);text-transform:uppercase;}
-    .week-date{font-size:.9rem;font-weight:800;margin-bottom:3px;width:24px;height:24px;display:flex;align-items:center;justify-content:center;}
-    .week-col.today-col .week-date{background:var(--primary);color:#fff;border-radius:50%;}
-    .week-col.sat .week-date{color:var(--sat-txt);} .week-col.sun .week-date{color:var(--sun-txt);}
-    .week-event{border-radius:6px;padding:4px 5px;font-size:.7rem;font-weight:700;cursor:pointer;}
-    .week-event .event-meta{font-size:.61rem;color:var(--muted);margin-top:1px;font-weight:600;}
-    .week-event.owner-fernando{background:var(--fernando);} .week-event.owner-yolanda{background:var(--yolanda);}
-    .week-event.owner-both{background:var(--both);} .week-event.owner-default{background:#f3f4f6;}
-    /* DAY VIEW */
-    #dayView{flex:1;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:10px;}
-    .day-panel{} 
-    .day-event{border-radius:10px;padding:10px 12px;margin-bottom:8px;font-size:.88rem;font-weight:700;cursor:pointer;}
-    .day-event .event-meta{font-size:.78rem;color:var(--muted);margin-top:3px;font-weight:600;}
-    .day-event.owner-fernando{background:var(--fernando);} .day-event.owner-yolanda{background:var(--yolanda);}
-    .day-event.owner-both{background:var(--both);} .day-event.owner-default{background:#f3f4f6;}
-    /* BOTTOM TABBAR */
-    .tabbar{display:flex;background:#fff;border-top:1px solid var(--line);padding-bottom:var(--bot);flex-shrink:0;}
-    .tab{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;padding:6px 4px;border:none;background:none;cursor:pointer;color:var(--muted);font-size:.6rem;font-weight:700;}
-    .tab .ti{font-size:1.2rem;line-height:1;}
-    .tab.active{color:var(--primary);}
-    .tab:active{opacity:.6;}
-    /* OVERLAYS */
+    .day:active{filter:brightness(.94);}
+
+    .day-top{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:2px;}
+    .day-num-inner{
+      font-size:.85rem; font-weight:700; line-height:1;
+      min-width:20px; min-height:20px;
+      display:flex; align-items:center; justify-content:center;
+    }
+    .day.sat .day-num-inner{color:var(--sat-txt);}
+    .day.sun .day-num-inner{color:var(--sun-txt);}
+    .day.today .day-num-inner{
+      background:var(--primary); color:#fff;
+      border-radius:50%; width:22px; height:22px; font-size:.78rem;
+    }
+    .day-more{font-size:.6rem;color:var(--muted);font-weight:700;line-height:1;padding-top:1px;}
+
+    .events-stack{display:flex;flex-direction:column;gap:1px;overflow:hidden;flex:1;}
+    .event-pill{
+      font-size:.72rem; font-weight:700;
+      padding:1px 4px; border-radius:3px;
+      white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+      line-height:1.45; flex-shrink:0;
+    }
+    .event-pill.multi-mid,.event-pill.multi-end{font-size:.62rem;opacity:.85;}
+    .owner-fernando{background:var(--fernando);}
+    .owner-yolanda{background:var(--yolanda);}
+    .owner-both{background:var(--both);}
+    .owner-default{background:#e5e7eb;}
+
+    /* ── BOTTOM BAR ── */
+    .bottombar{
+      display:flex; align-items:center; justify-content:space-between;
+      padding:6px 12px; padding-bottom:max(8px,var(--bot));
+      background:#fff; border-top:1px solid var(--line);
+      flex-shrink:0; gap:8px;
+    }
+    .bb-left{display:flex;gap:6px;align-items:center;}
+    .bb-btn{
+      border:none; border-radius:10px; padding:8px 12px;
+      font-size:.78rem; font-weight:700; cursor:pointer;
+      display:flex; align-items:center; gap:4px;
+    }
+    .bb-btn:active{opacity:.7;}
+    .bb-new{background:var(--primary);color:#fff;}
+    .bb-ics{background:#f3f4f6;color:#374151;}
+    .bb-ai{background:#ede9fe;color:#5b21b6;}
+    #statusText{font-size:.65rem;color:var(--muted);flex:1;text-align:right;}
+
+    /* ── OVERLAYS ── */
     .overlay{position:fixed;inset:0;background:rgba(0,0,0,.45);display:none;align-items:flex-end;justify-content:center;z-index:500;}
     .overlay.open{display:flex;}
-    .modal{width:100%;max-width:640px;background:#fff;border-radius:20px 20px 0 0;padding:20px 16px;padding-bottom:max(20px,var(--bot));max-height:88vh;overflow-y:auto;-webkit-overflow-scrolling:touch;box-shadow:0 -4px 24px rgba(0,0,0,.15);}
+    .modal{width:100%;max-width:640px;background:#fff;border-radius:22px 22px 0 0;padding:20px 16px;padding-bottom:max(20px,var(--bot));max-height:90vh;overflow-y:auto;-webkit-overflow-scrolling:touch;box-shadow:0 -4px 24px rgba(0,0,0,.15);}
     .modal h2{font-size:1.05rem;font-weight:800;margin-bottom:14px;}
     .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
     .field{display:flex;flex-direction:column;gap:5px;}
@@ -115,7 +170,8 @@
     button:disabled{opacity:.5;cursor:not-allowed;}
     button{font:inherit;}
     .hidden{display:none!important;}
-    /* PIN */
+
+    /* ── PIN ── */
     #pin-screen{position:fixed;inset:0;background:linear-gradient(160deg,#e0eaff,#f9fafb);display:flex;align-items:center;justify-content:center;z-index:9999;padding:2rem;padding-top:max(2rem,var(--top));}
     .pin-card{background:#fff;border-radius:24px;padding:2.5rem 2rem;max-width:320px;width:100%;text-align:center;box-shadow:0 8px 40px rgba(0,0,0,.12);}
     .pin-card h2{font-size:1.4rem;font-weight:800;margin-bottom:4px;}
@@ -133,6 +189,7 @@
 </head>
 <body>
 
+<!-- PIN -->
 <div id="pin-screen">
   <div class="pin-card">
     <h2>Calendario Familiar</h2>
@@ -147,54 +204,41 @@
   </div>
 </div>
 
+<!-- HEADER -->
 <div class="hdr">
   <button class="hdr-nav" id="prevBtn">&#8249;</button>
-  <div class="hdr-month" id="currentTitle"></div>
+  <div class="hdr-month" id="currentTitle">abril 2026</div>
   <button class="hdr-nav" id="nextBtn">&#8250;</button>
-  <button class="hdr-today" id="todayBtn">Hoy</button>
+  <div class="hdr-right">
+    <button class="hdr-who" data-who="fernando" id="whoBtnFernando">Fernando</button>
+    <button class="hdr-who" data-who="yolanda" id="whoBtnYolanda">Yolanda</button>
+    <button class="hdr-who" data-who="both" id="whoBtnBoth">Ambos</button>
+  </div>
 </div>
 
-<div class="filters">
-  <button data-who="fernando" id="whoBtnFernando">Fernando</button>
-  <button data-who="yolanda" id="whoBtnYolanda">Yolanda</button>
-  <button data-who="both" id="whoBtnBoth">Ambos</button>
-  <div class="chip-sep"></div>
-  <button data-view="month">Mes</button>
-  <button data-view="week">Semana</button>
-  <button data-view="day">Día</button>
-  <div class="chip-sep"></div>
-  <button class="achip" id="importIcsBtn">📥 .ics</button>
-  <input type="file" id="icsFileInput" accept=".ics" style="display:none"/>
-  <button class="achip ai" id="aiBtn">✨ IA</button>
-  <button class="achip" id="newEventBtn">+ Nuevo</button>
-  <span id="statusText"></span>
+<!-- WEEKDAY LABELS -->
+<div class="wdays">
+  <div class="wday">lun</div><div class="wday">mar</div><div class="wday">mié</div>
+  <div class="wday">jue</div><div class="wday">vie</div>
+  <div class="wday sat">sáb</div><div class="wday sun">dom</div>
 </div>
 
-<div class="wday-row" id="wdayRow">
-  <div class="wday">Lun</div><div class="wday">Mar</div><div class="wday">Mié</div>
-  <div class="wday">Jue</div><div class="wday">Vie</div>
-  <div class="wday sat">Sáb</div><div class="wday sun">Dom</div>
-</div>
-
-<div id="cal-body">
+<!-- MONTH GRID -->
 <div id="monthGrid"></div>
-<div id="weekView" class="hidden"></div>
+<!-- Keep these hidden but present so JS doesn't break -->
+<div id="weekView" class="hidden"><div id="weekGrid"></div></div>
 <div id="dayView" class="hidden"><div class="day-panel" id="dayPanel"></div></div>
-</div>
+<div id="monthView" class="hidden"></div>
 
-<div class="tabbar">
-  <button class="tab active" data-view="month" id="tabMonth" onclick="document.querySelectorAll('[data-view]').forEach(b=>b.classList.toggle('active-view',b.dataset.view==='month'));state.currentView='month';render();">
-    <span class="ti">📅</span>Mes
-  </button>
-  <button class="tab" data-view="week" id="tabWeek" onclick="document.querySelectorAll('[data-view]').forEach(b=>b.classList.toggle('active-view',b.dataset.view==='week'));state.currentView='week';render();">
-    <span class="ti">📆</span>Semana
-  </button>
-  <button class="tab" data-view="day" id="tabDay" onclick="document.querySelectorAll('[data-view]').forEach(b=>b.classList.toggle('active-view',b.dataset.view==='day'));state.currentView='day';render();">
-    <span class="ti">🗓️</span>Día
-  </button>
-  <button class="tab" id="tabNew" onclick="openCreate(toYMD(new Date()))">
-    <span class="ti">➕</span>Nuevo
-  </button>
+<!-- BOTTOM BAR -->
+<div class="bottombar">
+  <div class="bb-left">
+    <button class="bb-btn bb-new" id="newEventBtn">＋ Evento</button>
+    <button class="bb-btn bb-ics" id="importIcsBtn">📥 Importar</button>
+    <button class="bb-btn bb-ai" id="aiBtn">✨ IA</button>
+    <input type="file" id="icsFileInput" accept=".ics" style="display:none"/>
+  </div>
+  <span id="statusText"></span>
 </div>
 
   <div class="overlay" id="aiOverlay" style="display:none;">
@@ -628,11 +672,8 @@
     function render() {
       els.title.textContent = formatMonthTitle(state.currentDate);
       document.querySelectorAll('[data-who]').forEach(btn => btn.classList.toggle('active-who', btn.dataset.who === state.currentUser));
-      document.querySelectorAll('[data-view]').forEach(btn => btn.classList.toggle('active-view', btn.dataset.view === state.currentView));
-      if(els.monthView)els.monthView.classList.toggle('hidden', state.currentView !== 'month');
-      if(els.weekView)els.weekView.classList.toggle('hidden', state.currentView !== 'week');
-      if(els.dayView)els.dayView.classList.toggle('hidden', state.currentView !== 'day');
-      const _wdr=document.getElementById('wdayRow');if(_wdr)_wdr.classList.toggle('hidden',state.currentView!=='month');
+      // view chips disabled in month-only mode
+      // month-only mode, always show monthGrid
       if (state.currentView === 'month') renderMonth();
       if (state.currentView === 'week') renderWeek();
       if (state.currentView === 'day') renderDay();
@@ -695,7 +736,7 @@
 
     function renderWeek() {
       const start = startOfWeek(state.currentDate);
-      if(els.weekGrid)els.weekGrid.innerHTML = '';
+      els.weekGrid.innerHTML = '';
       for (let i = 0; i < 7; i++) {
         const date = addDays(start, i);
         const ymd = toYMD(date);
@@ -714,7 +755,7 @@
           if (eventCard) openEdit(eventCard.dataset.id);
           else openCreate(ymd);
         });
-        if(els.weekGrid)els.weekGrid.appendChild(col);
+        els.weekGrid.appendChild(col);
       }
     }
 
@@ -1228,7 +1269,7 @@
       document.getElementById('icsCancelBtn').addEventListener('click', () => { document.getElementById('icsOverlay').style.display = 'none'; });
       document.getElementById('icsImportBtn').addEventListener('click', confirmIcsImport);
       document.getElementById('icsOverlay').addEventListener('click', (e) => { if (e.target === document.getElementById('icsOverlay')) document.getElementById('icsOverlay').style.display = 'none'; });
-      document.querySelectorAll('[data-view]').forEach(btn => btn.addEventListener('click', () => { state.currentView = btn.dataset.view; render(); }));
+      // view chips disabled in month-only mode
     }
 
     function startAutoRefresh() {
