@@ -7,15 +7,19 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="default"/>
   <meta name="apple-mobile-web-app-title" content="Calendario"/>
   <title>Calendario familiar</title>
-  <link rel="apple-touch-icon" href="icon.png"/>
+  <link rel="icon" type="image/png" href="icon.png">
+  <link rel="apple-touch-icon" href="icon.png">
   <style>
     :root {
       --sat:#edf6ff; --sat-txt:#1a73e8;
       --sun:#fff0f5; --sun-txt:#c62828;
       --fernando:#c8dcff; --yolanda:#fcd7ee; --both:#c6f0d0;
-      --guardia-bg:#ffc8c8; --malva-bg:#e8ccff;
+      --guardia-bg:#ffc8c8; --guardia-bd:#ff9999;
+      --malva-bg:#e8ccff; --malva-bd:#c084fc;
       --line:#d1d5db; --muted:#6b7280; --text:#111827;
-      --primary:#2563eb;
+      --primary:#2563eb; --primary-soft:#eff6ff;
+      --radius:0;
+      --shadow:none;
       --top:env(safe-area-inset-top,44px);
       --bot:env(safe-area-inset-bottom,20px);
     }
@@ -28,75 +32,101 @@
       display:flex; flex-direction:column;
       padding-top:var(--top);
     }
+    button{font:inherit;cursor:pointer;}
+    button:disabled{opacity:.5;cursor:not-allowed;}
+    .hidden{display:none!important;}
 
     /* ── HEADER ── */
-    .hdr{
-      display:flex; align-items:center;
-      padding:6px 10px 5px;
-      background:#fff;
+    .topbar {
+      display:flex; align-items:center; gap:4px;
+      padding:6px 8px 5px;
+      background:#fff; border-bottom:1px solid var(--line);
+      flex-shrink:0; flex-wrap:nowrap;
+      border-radius:0; box-shadow:none; border:none;
       border-bottom:1px solid var(--line);
-      flex-shrink:0; gap:6px;
     }
-    .hdr-month{
-      flex:1; font-size:1.3rem; font-weight:800;
-      letter-spacing:-.02em;
+    /* Month title (was h1 in title-wrap) */
+    .title-wrap { display:contents; }
+    .title-wrap h1 {
+      flex:1; font-size:1.25rem; font-weight:800;
+      letter-spacing:-.02em; line-height:1; margin:0;
+      order:2;
     }
-    .hdr-nav{
-      width:38px; height:38px; border:none; background:none;
-      font-size:1.5rem; color:var(--primary); cursor:pointer;
-      display:flex; align-items:center; justify-content:center;
-      border-radius:50%; flex-shrink:0;
-    }
-    .hdr-nav:active{background:#eff6ff;}
-    .hdr-right{display:flex;align-items:center;gap:6px;flex-shrink:0;}
-    .hdr-who{
-      font-size:.72rem; font-weight:700; padding:5px 10px;
-      border:1.5px solid var(--line); border-radius:999px;
-      background:#f9fafb; cursor:pointer; color:#374151;
-    }
-    .hdr-who.active-who[data-who="fernando"]{background:var(--fernando);border-color:#93c5fd;color:#1e40af;}
-    .hdr-who.active-who[data-who="yolanda"]{background:var(--yolanda);border-color:#f9a8d4;color:#9d174d;}
-    .hdr-who.active-who[data-who="both"]{background:var(--both);border-color:#86efac;color:#166534;}
-    .hdr-menu{
-      width:34px;height:34px;border:none;background:none;
-      font-size:1.3rem;cursor:pointer;color:var(--muted);
-      display:flex;align-items:center;justify-content:center;
-      border-radius:50%;
-    }
-    .hdr-menu:active{background:#f3f4f6;}
+    .title-wrap .subtitle { display:none; }
 
-    /* ── WEEKDAY LABELS ── */
-    .wdays{
-      display:grid; grid-template-columns:repeat(7,1fr);
-      background:#fafafa; border-bottom:1.5px solid var(--line);
+    /* Nav buttons */
+    .nav-btn {
+      width:36px; height:36px; border:none; background:none;
+      font-size:1.5rem; color:var(--primary);
+      display:flex; align-items:center; justify-content:center;
+      border-radius:50%; flex-shrink:0; padding:0;
+    }
+    .nav-btn:active{background:var(--primary-soft);}
+    #prevBtn{order:1;}
+    #nextBtn{order:3;}
+
+    /* Who chips */
+    .toolbar {
+      display:flex; gap:4px; align-items:center;
       flex-shrink:0;
     }
-    .wday{
+    /* First toolbar = who chips */
+    .topbar .toolbar:first-of-type { order:4; }
+    /* Second toolbar = view chips + buttons */
+    .topbar .toolbar:last-of-type { display:none; }
+
+    .who-chip, .view-chip {
+      border-radius:999px; padding:4px 9px;
+      font-size:.72rem; font-weight:700;
+      background:#f3f4f6; color:#374151;
+      border:1.5px solid transparent;
+      white-space:nowrap;
+    }
+    .who-chip.active[data-who="fernando"]{background:var(--fernando);border-color:#93c5fd;color:#1e40af;}
+    .who-chip.active[data-who="yolanda"]{background:var(--yolanda);border-color:#f9a8d4;color:#9d174d;}
+    .who-chip.active[data-who="both"]{background:var(--both);border-color:#86efac;color:#166534;}
+
+    /* Status */
+    .status { display:none; }
+
+    /* ── WEEKDAY ROW ── */
+    .month-view { flex:1; min-height:0; display:flex; flex-direction:column; }
+    .card.calendar-shell { flex:1; min-height:0; display:flex; flex-direction:column; border:none!important; box-shadow:none!important; border-radius:0!important; }
+    .month-bar { display:none; } /* hidden - we use topbar nav */
+    .legend { display:none; } /* hidden */
+
+    .weekday-row {
+      display:grid; grid-template-columns:repeat(7,1fr);
+      border-bottom:2px solid var(--line);
+      background:#fafafa; flex-shrink:0;
+    }
+    .weekday {
       text-align:center; padding:5px 0;
-      font-size:.78rem; font-weight:800;
+      font-size:.75rem; font-weight:800;
       color:var(--muted); text-transform:uppercase; letter-spacing:.02em;
     }
-    .wday.sat{color:var(--sat-txt);}
-    .wday.sun{color:var(--sun-txt);}
+    .weekday:nth-child(6){color:var(--sat-txt);}
+    .weekday:nth-child(7){color:var(--sun-txt);}
 
     /* ── MONTH GRID ── */
-    #monthGrid{
+    .month-grid {
       display:grid;
       grid-template-columns:repeat(7,1fr);
       grid-auto-rows:1fr;
       flex:1; min-height:0;
     }
-    .day{
+    .day {
       border-right:1px solid var(--line);
       border-bottom:1px solid var(--line);
       padding:3px 3px 2px;
       display:flex; flex-direction:column;
       cursor:pointer; overflow:hidden; position:relative;
       background:#fff;
+      border-radius:0!important;
     }
     .day:nth-child(7n){border-right:none;}
     .day.other-month{background:#f8f9fb;}
-    .day.other-month .day-num-inner{color:#c5ccd8;}
+    .day.other-month .day-num{color:#c5ccd8;}
     .day.sat{background:var(--sat);}
     .day.sun{background:var(--sun);}
     .day.today{box-shadow:inset 0 0 0 2px var(--primary);}
@@ -104,19 +134,21 @@
     .day.day-malvarrosa{background:var(--malva-bg)!important;}
     .day:active{filter:brightness(.94);}
 
-    .day-top{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:2px;}
-    .day-num-inner{
+    .day-num {
       font-size:.85rem; font-weight:700; line-height:1;
-      min-width:20px; min-height:20px;
-      display:flex; align-items:center; justify-content:center;
+      margin-bottom:2px;
+      display:flex; align-items:center; justify-content:space-between;
     }
-    .day.sat .day-num-inner{color:var(--sat-txt);}
-    .day.sun .day-num-inner{color:var(--sun-txt);}
-    .day.today .day-num-inner{
+    .day.sat .day-num{color:var(--sat-txt);}
+    .day.sun .day-num{color:var(--sun-txt);}
+    .day.today .day-num span:first-child {
       background:var(--primary); color:#fff;
-      border-radius:50%; width:22px; height:22px; font-size:.78rem;
+      border-radius:50%; width:22px; height:22px;
+      display:inline-flex; align-items:center; justify-content:center;
+      font-size:.75rem;
     }
-    .day-more{font-size:.6rem;color:var(--muted);font-weight:700;line-height:1;padding-top:1px;}
+    .corner-icon{font-size:.65rem;line-height:1;flex-shrink:0;}
+    .day-cnt{font-size:.6rem;color:var(--muted);font-weight:700;}
 
     .events-stack{display:flex;flex-direction:column;gap:1px;overflow:hidden;flex:1;}
     .event-pill{
@@ -125,32 +157,35 @@
       white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
       line-height:1.45; flex-shrink:0;
     }
-    .event-pill.multi-mid,.event-pill.multi-end{font-size:.62rem;opacity:.85;}
+    .more-pill{font-size:.6rem;color:var(--muted);font-weight:700;padding-left:2px;}
     .owner-fernando{background:var(--fernando);}
     .owner-yolanda{background:var(--yolanda);}
     .owner-both{background:var(--both);}
     .owner-default{background:#e5e7eb;}
 
+    /* Hide week/day views */
+    .week-view, .day-view { display:none!important; }
+
     /* ── BOTTOM BAR ── */
-    .bottombar{
+    .app > :not(.card) { display:none; } /* hide status div */
+    .bottombar-custom {
       display:flex; align-items:center; justify-content:space-between;
-      padding:6px 12px; padding-bottom:max(8px,var(--bot));
+      padding:6px 10px; padding-bottom:max(8px,var(--bot));
       background:#fff; border-top:1px solid var(--line);
-      flex-shrink:0; gap:8px;
+      flex-shrink:0; gap:6px;
     }
-    .bb-left{display:flex;gap:6px;align-items:center;}
+    .bb-left{display:flex;gap:6px;}
     .bb-btn{
       border:none; border-radius:10px; padding:8px 12px;
-      font-size:.78rem; font-weight:700; cursor:pointer;
-      display:flex; align-items:center; gap:4px;
+      font-size:.78rem; font-weight:700;
     }
     .bb-btn:active{opacity:.7;}
     .bb-new{background:var(--primary);color:#fff;}
     .bb-ics{background:#f3f4f6;color:#374151;}
     .bb-ai{background:#ede9fe;color:#5b21b6;}
-    #statusText{font-size:.65rem;color:var(--muted);flex:1;text-align:right;}
+    #statusTextBottom{font-size:.65rem;color:var(--muted);}
 
-    /* ── OVERLAYS ── */
+    /* ── MODALS / OVERLAYS ── */
     .overlay{position:fixed;inset:0;background:rgba(0,0,0,.45);display:none;align-items:flex-end;justify-content:center;z-index:500;}
     .overlay.open{display:flex;}
     .modal{width:100%;max-width:640px;background:#fff;border-radius:22px 22px 0 0;padding:20px 16px;padding-bottom:max(20px,var(--bot));max-height:90vh;overflow-y:auto;-webkit-overflow-scrolling:touch;box-shadow:0 -4px 24px rgba(0,0,0,.15);}
@@ -164,12 +199,9 @@
     textarea{min-height:70px;resize:vertical;}
     .modal-actions{display:flex;justify-content:space-between;gap:8px;margin-top:14px;flex-wrap:wrap;}
     .actions-left,.actions-right{display:flex;gap:8px;}
-    .btn-primary{background:var(--primary);color:#fff;border:none;border-radius:12px;padding:11px 18px;font-weight:800;cursor:pointer;font-size:.9rem;}
-    .btn-soft{background:#eff6ff;color:#1d4ed8;border:none;border-radius:12px;padding:11px 18px;font-weight:800;cursor:pointer;font-size:.9rem;}
-    .btn-danger{background:#fee2e2;color:#b91c1c;border:none;border-radius:12px;padding:11px 18px;font-weight:800;cursor:pointer;font-size:.9rem;}
-    button:disabled{opacity:.5;cursor:not-allowed;}
-    button{font:inherit;}
-    .hidden{display:none!important;}
+    .btn-primary{background:var(--primary);color:#fff;border:none;border-radius:12px;padding:11px 18px;font-weight:800;font-size:.9rem;}
+    .btn-soft{background:#eff6ff;color:#1d4ed8;border:none;border-radius:12px;padding:11px 18px;font-weight:800;font-size:.9rem;}
+    .btn-danger{background:#fee2e2;color:#b91c1c;border:none;border-radius:12px;padding:11px 18px;font-weight:800;font-size:.9rem;}
 
     /* ── PIN ── */
     #pin-screen{position:fixed;inset:0;background:linear-gradient(160deg,#e0eaff,#f9fafb);display:flex;align-items:center;justify-content:center;z-index:9999;padding:2rem;padding-top:max(2rem,var(--top));}
@@ -180,16 +212,16 @@
     .pin-input{width:100%;padding:13px 46px 13px 14px;border:2px solid #e5e7eb;border-radius:14px;font-size:1.05rem;outline:none;}
     .pin-input:focus{border-color:var(--primary);}
     .pin-input.error{border-color:#ef4444;animation:shake .3s;}
-    .pin-toggle{position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:1.1rem;color:var(--muted);}
+    .pin-toggle{position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;font-size:1.1rem;color:var(--muted);}
     @keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
-    .pin-submit{width:100%;padding:14px;background:var(--primary);color:#fff;border:none;border-radius:14px;font-size:1rem;font-weight:800;cursor:pointer;}
+    .pin-submit{width:100%;padding:14px;background:var(--primary);color:#fff;border:none;border-radius:14px;font-size:1rem;font-weight:800;}
     .pin-err{color:#ef4444;font-size:.85rem;min-height:1.1rem;margin-top:.5rem;}
     .pin-hint{color:var(--muted);font-size:.72rem;margin-top:.8rem;}
   </style>
 </head>
 <body>
 
-<!-- PIN -->
+<!-- PIN (unchanged) -->
 <div id="pin-screen">
   <div class="pin-card">
     <h2>Calendario Familiar</h2>
@@ -204,41 +236,73 @@
   </div>
 </div>
 
-<!-- HEADER -->
-<div class="hdr">
-  <button class="hdr-nav" id="prevBtn">&#8249;</button>
-  <div class="hdr-month" id="currentTitle">abril 2026</div>
-  <button class="hdr-nav" id="nextBtn">&#8250;</button>
-  <div class="hdr-right">
-    <button class="hdr-who" data-who="fernando" id="whoBtnFernando">Fernando</button>
-    <button class="hdr-who" data-who="yolanda" id="whoBtnYolanda">Yolanda</button>
-    <button class="hdr-who" data-who="both" id="whoBtnBoth">Ambos</button>
+<!-- APP — same structure as original but reorganized visually via CSS -->
+<div class="app">
+
+  <!-- TOPBAR: nav buttons + month title + who chips -->
+  <div class="card topbar">
+    <button class="nav-btn" id="prevBtn">&#8249;</button>
+    <div class="title-wrap">
+      <h1 id="currentTitle">abril 2026</h1>
+    </div>
+    <button class="nav-btn" id="nextBtn">&#8250;</button>
+    <div class="toolbar">
+      <button class="who-chip active" data-who="fernando" id="whoBtnFernando">Fernando</button>
+      <button class="who-chip" data-who="yolanda" id="whoBtnYolanda">Yolanda</button>
+      <button class="who-chip" data-who="both" id="whoBtnBoth">Ambos</button>
+    </div>
+    <!-- Hidden toolbar with view chips — JS needs these to exist -->
+    <div class="toolbar" style="display:none;">
+      <button class="view-chip active" data-view="month">Mes</button>
+      <button class="view-chip" data-view="week">Semana</button>
+      <button class="view-chip" data-view="day">Dia</button>
+      <button class="btn-primary" id="newEventBtn" style="display:none;"></button>
+      <button class="btn-soft" id="todayBtn" style="display:none;"></button>
+      <button class="btn-soft" id="importIcsBtn" style="display:none;"></button>
+      <button class="btn-soft" id="aiBtn" style="display:none;"></button>
+      <input type="file" id="icsFileInput" accept=".ics" style="display:none"/>
+    </div>
   </div>
-</div>
 
-<!-- WEEKDAY LABELS -->
-<div class="wdays">
-  <div class="wday">lun</div><div class="wday">mar</div><div class="wday">mié</div>
-  <div class="wday">jue</div><div class="wday">vie</div>
-  <div class="wday sat">sáb</div><div class="wday sun">dom</div>
-</div>
+  <div class="status" id="statusText"></div>
 
-<!-- MONTH GRID -->
-<div id="monthGrid"></div>
-<!-- Keep these hidden but present so JS doesn't break -->
-<div id="weekView" class="hidden"><div id="weekGrid"></div></div>
-<div id="dayView" class="hidden"><div class="day-panel" id="dayPanel"></div></div>
-<div id="monthView" class="hidden"></div>
+  <!-- CALENDAR SHELL -->
+  <div class="card calendar-shell">
+    <div class="month-bar">
+      <button class="nav-btn" id="prevBtn2">‹</button>
+      <div class="month-title" id="currentTitle2"></div>
+      <button class="nav-btn" id="nextBtn2">›</button>
+    </div>
+    <div class="legend" style="display:none;"></div>
+
+    <div id="monthView" class="month-view">
+      <div class="weekday-row">
+        <div class="weekday">lun</div><div class="weekday">mar</div>
+        <div class="weekday">mié</div><div class="weekday">jue</div>
+        <div class="weekday">vie</div>
+        <div class="weekday">sáb</div><div class="weekday">dom</div>
+      </div>
+      <div class="month-grid" id="monthGrid"></div>
+    </div>
+
+    <div class="week-view hidden" id="weekView">
+      <div class="week-grid" id="weekGrid"></div>
+    </div>
+    <div class="day-view hidden" id="dayView">
+      <div class="day-panel" id="dayPanel"></div>
+    </div>
+  </div>
+
+</div>
 
 <!-- BOTTOM BAR -->
-<div class="bottombar">
+<div class="bottombar-custom">
   <div class="bb-left">
-    <button class="bb-btn bb-new" id="newEventBtn">＋ Evento</button>
-    <button class="bb-btn bb-ics" id="importIcsBtn">📥 Importar</button>
-    <button class="bb-btn bb-ai" id="aiBtn">✨ IA</button>
-    <input type="file" id="icsFileInput" accept=".ics" style="display:none"/>
+    <button class="bb-btn bb-new" onclick="document.getElementById('newEventBtn').click()">＋ Evento</button>
+    <button class="bb-btn bb-ics" onclick="document.getElementById('importIcsBtn').click();document.getElementById('icsFileInput').click()">📥 Importar</button>
+    <button class="bb-btn bb-ai" onclick="document.getElementById('aiBtn').click()">✨ IA</button>
   </div>
-  <span id="statusText"></span>
+  <span id="statusTextBottom"></span>
 </div>
 
   <div class="overlay" id="aiOverlay" style="display:none;">
@@ -477,7 +541,7 @@
       monthGrid: document.getElementById('monthGrid'),
       weekGrid: document.getElementById('weekGrid'),
       dayPanel: document.getElementById('dayPanel'),
-      monthView: document.getElementById('monthGrid'),
+      monthView: document.getElementById('monthView'),
       weekView: document.getElementById('weekView'),
       dayView: document.getElementById('dayView'),
       status: document.getElementById('statusText'),
@@ -671,9 +735,11 @@
 
     function render() {
       els.title.textContent = formatMonthTitle(state.currentDate);
-      document.querySelectorAll('[data-who]').forEach(btn => btn.classList.toggle('active-who', btn.dataset.who === state.currentUser));
-      // view chips disabled in month-only mode
-      // month-only mode, always show monthGrid
+      document.querySelectorAll('.who-chip').forEach(btn => btn.classList.toggle('active', btn.dataset.who === state.currentUser));
+      document.querySelectorAll('.view-chip').forEach(btn => btn.classList.toggle('active', btn.dataset.view === state.currentView));
+      els.monthView.classList.toggle('hidden', state.currentView !== 'month');
+      els.weekView.classList.toggle('hidden', state.currentView !== 'week');
+      els.dayView.classList.toggle('hidden', state.currentView !== 'day');
       if (state.currentView === 'month') renderMonth();
       if (state.currentView === 'week') renderWeek();
       if (state.currentView === 'day') renderDay();
@@ -1248,7 +1314,7 @@
       document.getElementById('saveBtn').addEventListener('click', handleSave);
       document.getElementById('deleteBtn').addEventListener('click', handleDelete);
       els.overlay.addEventListener('click', (e) => { if (e.target === els.overlay) closeModal(); });
-      document.querySelectorAll('[data-who]').forEach(btn => btn.addEventListener('click', () => { state.currentUser = btn.dataset.who; render(); }));
+      document.querySelectorAll('.who-chip').forEach(btn => btn.addEventListener('click', () => { state.currentUser = btn.dataset.who; render(); }));
       document.getElementById('aiBtn').addEventListener('click', () => {
         document.getElementById('aiOverlay').style.display = 'flex';
         document.getElementById('ai-status').textContent = '';
@@ -1269,7 +1335,7 @@
       document.getElementById('icsCancelBtn').addEventListener('click', () => { document.getElementById('icsOverlay').style.display = 'none'; });
       document.getElementById('icsImportBtn').addEventListener('click', confirmIcsImport);
       document.getElementById('icsOverlay').addEventListener('click', (e) => { if (e.target === document.getElementById('icsOverlay')) document.getElementById('icsOverlay').style.display = 'none'; });
-      // view chips disabled in month-only mode
+      document.querySelectorAll('.view-chip').forEach(btn => btn.addEventListener('click', () => { state.currentView = btn.dataset.view; render(); }));
     }
 
     function startAutoRefresh() {
@@ -1294,5 +1360,17 @@
     loadEvents(true);
     startAutoRefresh();
   </script>
+<script>
+// Mirror status to bottom bar
+(function() {
+  const obs = new MutationObserver(() => {
+    const bt = document.getElementById('statusTextBottom');
+    const st = document.getElementById('statusText');
+    if (bt && st) bt.textContent = st.textContent;
+  });
+  const st = document.getElementById('statusText');
+  if (st) obs.observe(st, {childList:true, characterData:true, subtree:true});
+})();
+</script>
 </body>
 </html>
