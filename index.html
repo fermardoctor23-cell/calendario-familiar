@@ -51,8 +51,9 @@
     .wday{text-align:center;font-size:.72rem;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.03em;padding:4px 0;}
     .wday.sat{color:var(--sat-txt);} .wday.sun{color:var(--sun-txt);}
     /* MONTH GRID */
-    #monthGrid{display:grid;grid-template-columns:repeat(7,1fr);flex:1;min-height:0;border-left:1px solid var(--line);}
-    .day{border-right:1px solid var(--line);border-bottom:1px solid var(--line);padding:3px 2px 2px;display:flex;flex-direction:column;cursor:pointer;overflow:hidden;position:relative;background:#fff;min-height:0;}
+    #cal-body{flex:1;min-height:0;display:flex;flex-direction:column;overflow:hidden;}
+    #monthGrid{display:grid;grid-template-columns:repeat(7,1fr);grid-auto-rows:1fr;flex:1;min-height:0;border-left:1px solid var(--line);}
+    .day{border-right:1px solid var(--line);border-bottom:1px solid var(--line);padding:3px 2px 2px;display:flex;flex-direction:column;cursor:pointer;overflow:hidden;position:relative;background:#fff;}
     .day.other-month{background:#fafcff;} .day.other-month .day-num{color:#c5ccd8;}
     .day.sat{background:var(--sat);} .day.sun{background:var(--sun);}
     .day.today{box-shadow:inset 0 0 0 2px var(--primary);}
@@ -70,6 +71,7 @@
     .more-lbl{font-size:.57rem;color:var(--muted);font-weight:700;padding-left:2px;}
     /* WEEK VIEW */
     #weekView{flex:1;min-height:0;display:grid;grid-template-columns:repeat(7,1fr);overflow-y:auto;-webkit-overflow-scrolling:touch;border-left:1px solid var(--line);}
+    #dayView{flex:1;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:10px;}
     .week-col{border-right:1px solid var(--line);padding:5px 3px;display:flex;flex-direction:column;gap:4px;}
     .week-col.sat{background:var(--sat);} .week-col.sun{background:var(--sun);}
     .week-head{font-size:.6rem;font-weight:800;color:var(--muted);text-transform:uppercase;}
@@ -174,9 +176,11 @@
   <div class="wday sat">Sáb</div><div class="wday sun">Dom</div>
 </div>
 
+<div id="cal-body">
 <div id="monthGrid"></div>
 <div id="weekView" class="hidden"></div>
 <div id="dayView" class="hidden"><div class="day-panel" id="dayPanel"></div></div>
+</div>
 
 <div class="tabbar">
   <button class="tab active" data-view="month" id="tabMonth" onclick="document.querySelectorAll('[data-view]').forEach(b=>b.classList.toggle('active-view',b.dataset.view==='month'));state.currentView='month';render();">
