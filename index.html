@@ -299,7 +299,7 @@
 <div class="bottombar-custom">
   <div class="bb-left">
     <button class="bb-btn bb-new" onclick="document.getElementById('newEventBtn').click()">＋ Evento</button>
-    <button class="bb-btn bb-ics" onclick="document.getElementById('importIcsBtn').click();document.getElementById('icsFileInput').click()">📥 Importar</button>
+    <button class="bb-btn bb-ics" onclick="document.getElementById('icsFileInput').click()">📥 ICS</button>
     <button class="bb-btn bb-ai" onclick="document.getElementById('aiBtn').click()">✨ IA</button>
   </div>
   <span id="statusTextBottom"></span>
@@ -1370,6 +1370,25 @@
   });
   const st = document.getElementById('statusText');
   if (st) obs.observe(st, {childList:true, characterData:true, subtree:true});
+})();
+
+// Swipe left/right to change month
+(function() {
+  let startX = 0, startY = 0;
+  const grid = document.getElementById('monthGrid');
+  if (!grid) return;
+  grid.addEventListener('touchstart', e => {
+    startX = e.touches[0].clientX;
+    startY = e.touches[0].clientY;
+  }, {passive:true});
+  grid.addEventListener('touchend', e => {
+    const dx = e.changedTouches[0].clientX - startX;
+    const dy = e.changedTouches[0].clientY - startY;
+    if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy) * 1.5) {
+      if (dx < 0) document.getElementById('nextBtn').click();
+      else document.getElementById('prevBtn').click();
+    }
+  }, {passive:true});
 })();
 </script>
 </body>
