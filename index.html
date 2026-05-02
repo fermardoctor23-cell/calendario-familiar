@@ -1277,6 +1277,74 @@
     }
   },{passive:true});
 })();
+
+// Multi-day event overlay
+function drawMultiDayBars() {
+  const layer = document.getElementById('multiday-layer');
+  if (!layer) return;
+  layer.innerHTML = '';
+  const grid = document.getElementById('monthGrid');
+  if (!grid) return;
+  const cells = Array.from(grid.querySelectorAll('.day'));
+  if (cells.length < 42) return;
+  const lr = layer.getBoundingClientRect();
+  const multiEvs = (window.state && window.state.events || []).filter(ev => {
+    if (window.eventMatchesUser && !eventMatchesUser(ev)) return false;
+    const s = normalizeDate(ev.date);
+    const e = normalizeDate(ev.enddate || ev.date || '');
+    if (!e || e <= s) return false;
+    // Only truly multi-day (enddate > date by at least 2 days or different day)
+    const ds = new Date(s+'T12:00:00');
+    const de = new Date(e+'T12:00:00');
+    return (de - ds) >= 86400000; // at least 1 day apart
+  });
+
+  multiEvs.forEach(ev => {
+    const evStart = normalizeDate(ev.date);
+    const evEnd = normalizeDate(ev.enddate);
+    for (let row = 0; row < 6; row++) {
+      let startCol=-1, endCol=-1;
+      for (let col=0; col<7; col++) {
+        const cell = cells[row*7+col];
+        const ymd = cell && cell.dataset.ymd;
+        if (!ymd) continue;
+        if (ymd >= evStart && ymd <= evEnd) {
+          if (startCol===-1) startCol=col;
+          endCol=col;
+        }
+      }
+      if (startCol===-1) continue;
+      const sc = cells[row*7+startCol];
+      const ec = cells[row*7+endCol];
+      const sr = sc.getBoundingClientRect();
+      const er = ec.getBoundingClientRect();
+      const bar = document.createElement('div');
+      const cls = window.ownerClass ? ownerClass(ev.who) : 'owner-default';
+      bar.className = 'md-bar ' + cls;
+      bar.style.left = (sr.left - lr.left + 2) + 'px';
+      bar.style.width = (er.right - sr.left - 4) + 'px';
+      bar.style.top = (sr.top - lr.top + 24) + 'px';
+      bar.style.height = '20px';
+      const isFirst = cells[row*7+startCol].dataset.ymd === evStart;
+      const icon = window.iconFor ? (iconFor(ev)||'') : '';
+      bar.textContent = isFirst ? (icon ? icon+' ' : '') + ev.title : '';
+      bar.addEventListener('click', e => { e.stopPropagation(); if(window.openEdit) openEdit(ev.id); });
+      layer.appendChild(bar);
+    }
+  });
+}
+
+// Patch render() to call drawMultiDayBars after month render
+(function(){
+  const origRender = window.render;
+  if (!origRender) return;
+  window.render = function() {
+    origRender.apply(this, arguments);
+    if (window.state && window.state.currentView === 'month') {
+      requestAnimationFrame(drawMultiDayBars);
+    }
+  };
+})();
 // Mirror status
 (function(){
   const obs=new MutationObserver(()=>{
