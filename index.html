@@ -323,6 +323,9 @@
 
     // ---- SEGURIDAD ----
     const CORRECT_PIN = '2606'; // <-- CAMBIA ESTO por tu contrasena
+    window.addEventListener('load', () => {
+  document.getElementById('pin-screen').style.display = 'none';
+});
     const PIN_KEY = 'cal-pin-ok';
 
     // Guardar en todos los mecanismos posibles
