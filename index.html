@@ -745,6 +745,92 @@
       if (state.currentView === 'day') renderDay();
     }
 
+    function renderMultiDayOverlay(gridStart) {
+      const layer = document.getElementById('multiday-layer');
+      if (!layer) return;
+      layer.innerHTML = '';
+      const grid = document.getElementById('monthGrid');
+      if (!grid) return;
+      const cells = grid.querySelectorAll('.day');
+      if (cells.length < 42) return;
+      const gridRect = grid.getBoundingClientRect();
+      const layerRect = layer.getBoundingClientRect();
+
+      // Get multi-day events visible in this grid
+      const multiEvents = state.events.filter(ev => {
+        if (!eventMatchesUser(ev)) return false;
+        const s = normalizeDate(ev.date);
+        const e = normalizeDate(ev.enddate || ev.date || '');
+        return e && e > s;
+      });
+
+      multiEvents.forEach(ev => {
+        const evStart = normalizeDate(ev.date);
+        const evEnd = normalizeDate(ev.enddate);
+        const gridStartYmd = toYMD(gridStart);
+        const gridEndYmd = toYMD(addDays(gridStart, 41));
+        if (evEnd < gridStartYmd || evStart > gridEndYmd) return;
+
+        // Find which row indices this event spans
+        const clampedStart = evStart < gridStartYmd ? gridStartYmd : evStart;
+        const clampedEnd = evEnd > gridEndYmd ? gridEndYmd : evEnd;
+
+        // Split into week rows
+        let cur = new Date(clampedStart + 'T12:00:00');
+        const end = new Date(clampedEnd + 'T12:00:00');
+
+        while (cur <= end) {
+          const dow = (cur.getDay() + 6) % 7; // 0=Mon
+          const rowStart = new Date(cur);
+          // Find end of this week row or event end
+          const rowEnd = new Date(cur);
+          rowEnd.setDate(rowEnd.getDate() + (6 - dow));
+          const segEnd = rowEnd < end ? rowEnd : end;
+
+          // Cell indices
+          const startIdx = Math.round((cur - gridStart) / 86400000);
+          const endIdx = Math.round((segEnd - gridStart) / 86400000);
+
+          if (startIdx >= 0 && startIdx < 42 && cells[startIdx] && cells[endIdx]) {
+            const startCell = cells[startIdx];
+            const endCell = cells[endIdx];
+            const sr = startCell.getBoundingClientRect();
+            const er = endCell.getBoundingClientRect();
+
+            const bar = document.createElement('div');
+            bar.className = 'md-bar ' + ownerClass(ev.who);
+
+            // Vertical position: after day number (about 22px from top)
+            const TOP_OFFSET = 22;
+            const BAR_HEIGHT = 18;
+            // Find row in which this segment falls (0-5)
+            const rowIdx = Math.floor(startIdx / 7);
+            // Get first cell of this row to get y
+            const rowFirstCell = cells[rowIdx * 7];
+            const rfr = rowFirstCell.getBoundingClientRect();
+            const top = (rfr.top - layerRect.top) + TOP_OFFSET;
+
+            bar.style.cssText = [
+              'left:' + (sr.left - layerRect.left + 1) + 'px',
+              'width:' + (er.right - sr.left - 2) + 'px',
+              'top:' + top + 'px',
+              'height:' + BAR_HEIGHT + 'px'
+            ].join(';');
+
+            const icon = iconFor(ev) || '';
+            const isFirstSeg = toYMD(cur) === evStart || toYMD(cur) === toYMD(new Date(clampedStart + 'T12:00:00'));
+            bar.textContent = (icon ? icon + ' ' : '') + (isFirstSeg ? ev.title : '');
+            bar.dataset.id = ev.id;
+            bar.addEventListener('click', () => openEdit(ev.id));
+            layer.appendChild(bar);
+          }
+
+          // Move to next week
+          cur.setDate(cur.getDate() + (7 - dow));
+        }
+      });
+    }
+
     function renderMonth() {
       const gridStart = startOfMonthGrid(state.currentDate);
       const todayYmd = toYMD(startOfDay(new Date()));
@@ -755,7 +841,13 @@
       for (let i = 0; i < 42; i++) {
         const date = addDays(gridStart, i);
         const ymd = toYMD(date);
-        const items = eventsForDate(ymd);
+        const allItems = eventsForDate(ymd);
+        // Single-day events only in cells (multi-day drawn on overlay)
+        const items = allItems.filter(ev => {
+          const s = normalizeDate(ev.date);
+          const e = normalizeDate(ev.enddate || ev.date || '');
+          return !e || e <= s;
+        });
         const day = document.createElement('div');
         const isOtherMonth = date.getMonth() !== currentMonth;
         const weekday = date.getDay();
@@ -806,7 +898,13 @@
       for (let i = 0; i < 7; i++) {
         const date = addDays(start, i);
         const ymd = toYMD(date);
-        const items = eventsForDate(ymd);
+        const allItems = eventsForDate(ymd);
+        // Single-day events only in cells (multi-day drawn on overlay)
+        const items = allItems.filter(ev => {
+          const s = normalizeDate(ev.date);
+          const e = normalizeDate(ev.enddate || ev.date || '');
+          return !e || e <= s;
+        });
         const col = document.createElement('div');
         col.className = 'week-col';
         if (date.getDay() === 6) col.classList.add('sat');
@@ -827,7 +925,13 @@
 
     function renderDay() {
       const ymd = toYMD(state.currentDate);
-      const items = eventsForDate(ymd);
+      const allItems = eventsForDate(ymd);
+        // Single-day events only in cells (multi-day drawn on overlay)
+        const items = allItems.filter(ev => {
+          const s = normalizeDate(ev.date);
+          const e = normalizeDate(ev.enddate || ev.date || '');
+          return !e || e <= s;
+        });
       const eventsHtml = items.length ? items.map(ev => {
         const meta = [];
         if (normalizeTime(ev.time)) meta.push(normalizeTime(ev.time));
