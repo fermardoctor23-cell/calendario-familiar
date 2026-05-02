@@ -323,9 +323,7 @@
 
     // ---- SEGURIDAD ----
     const CORRECT_PIN = '2606'; // <-- CAMBIA ESTO por tu contrasena
-    window.addEventListener('load', () => {
-  document.getElementById('pin-screen').style.display = 'none';
-});
+    // pin managed by checkUnlocked()
     const PIN_KEY = 'cal-pin-ok';
 
     // Guardar en todos los mecanismos posibles
@@ -1295,8 +1293,9 @@ function drawMultiDayBars() {
   const cells = Array.from(grid.querySelectorAll('.day'));
   if (cells.length < 42) return;
   const lr = layer.getBoundingClientRect();
-  const multiEvs = (window.state && window.state.events || []).filter(ev => {
-    if (window.eventMatchesUser && !eventMatchesUser(ev)) return false;
+  if (typeof state === 'undefined') return;
+  const multiEvs = (state.events || []).filter(ev => {
+    if (typeof eventMatchesUser === 'function' && !eventMatchesUser(ev)) return false;
     const s = normalizeDate(ev.date);
     const e = normalizeDate(ev.enddate || ev.date || '');
     if (!e || e <= s) return false;
@@ -1326,7 +1325,7 @@ function drawMultiDayBars() {
       const sr = sc.getBoundingClientRect();
       const er = ec.getBoundingClientRect();
       const bar = document.createElement('div');
-      const cls = window.ownerClass ? ownerClass(ev.who) : 'owner-default';
+      const cls = (typeof ownerClass === 'function') ? ownerClass(ev.who) : 'owner-default';
       bar.className = 'md-bar ' + cls;
      bar.style.left = (sr.left - lr.left) + 'px';
 bar.style.width = (er.right - sr.left) + 'px';
@@ -1335,7 +1334,7 @@ bar.style.width = (er.right - sr.left) + 'px';
       bar.style.top = (sr.top - lr.top + 20 + stackIndex * 18) + 'px';
       bar.style.height = '20px';
       const isFirst = cells[row*7+startCol].dataset.ymd === evStart;
-      const icon = window.iconFor ? (iconFor(ev)||'') : '';
+      const icon = (typeof iconFor === 'function') ? (iconFor(ev)||'') : '';
       bar.textContent = isFirst ? (icon ? icon+' ' : '') + ev.title : '';
       bar.addEventListener('click', e => { e.stopPropagation(); if(window.openEdit) openEdit(ev.id); });
       layer.appendChild(bar);
@@ -1349,7 +1348,7 @@ bar.style.width = (er.right - sr.left) + 'px';
   if (!origRender) return;
   window.render = function() {
     origRender.apply(this, arguments);
-    if (window.state && window.state.currentView === 'month') {
+    if (typeof state !== 'undefined' && state.currentView === 'month') {
       requestAnimationFrame(drawMultiDayBars);
     }
   };
