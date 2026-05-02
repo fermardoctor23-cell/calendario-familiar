@@ -394,6 +394,7 @@
     });
 
         const state = {
+          window.state = state;
       events: [],
       currentUser: 'fernando',
       currentView: 'month',
@@ -656,6 +657,11 @@
         const date = addDays(gridStart, i);
         const ymd = toYMD(date);
         const items = eventsForDate(ymd);
+        const singleDayItems = items.filter(ev => {
+  const s = normalizeDate(ev.date);
+  const e = normalizeDate(ev.enddate || ev.date);
+  return !e || e === s;
+});
         const day = document.createElement('div');
         const isOtherMonth = date.getMonth() !== currentMonth;
         const weekday = date.getDay();
@@ -671,8 +677,8 @@
         if (weekday === 0) day.classList.add('sun');
         if (ymd === todayYmd) day.classList.add('today');
 
-        const topIcon = (items[0] && iconFor(items[0])) ? `<div class="corner-icon has-icon">${iconFor(items[0])}</div>` : '';
-       const shown = items
+  const topIcon = (singleDayItems[0] && iconFor(singleDayItems[0])) ? `<div class="corner-icon has-icon">${iconFor(singleDayItems[0])}</div>` : '';
+const shown = singleDayItems
   .filter(ev => normalizeDate(ev.enddate || ev.date) === normalizeDate(ev.date)) // SOLO eventos de 1 día
   .slice(0, maxItems)
   .map(ev => {
@@ -685,7 +691,7 @@
           const showTitle = !isMulti || ymd === evStart;
           return `<div class="event-pill ${ownerClass(ev.who)}" style="${style}" data-id="${escapeHtml(ev.id)}">${showTitle ? escapeHtml(title) : ''}${sub && showTitle ? `<small>${escapeHtml(sub)}</small>` : ''}</div>`;
         }).join('');
-        const more = items.length > maxItems ? `<div class="more-pill">+${items.length - maxItems} más</div>` : '';
+        const more = singleDayItems.length > maxItems ? `<div class="more-pill">+${singleDayItems.length - maxItems} más</div>` : '';
 
         day.innerHTML = `${topIcon}<div class="day-num">${date.getDate()}</div><div class="events-stack">${shown}${more}</div>`;
         day.addEventListener('click', (e) => {
@@ -1318,8 +1324,8 @@ function drawMultiDayBars() {
       const bar = document.createElement('div');
       const cls = window.ownerClass ? ownerClass(ev.who) : 'owner-default';
       bar.className = 'md-bar ' + cls;
-      bar.style.left = (sr.left - lr.left + 2) + 'px';
-      bar.style.width = (er.right - sr.left - 4) + 'px';
+     bar.style.left = (sr.left - lr.left) + 'px';
+bar.style.width = (er.right - sr.left) + 'px';
       bar.style.top = (sr.top - lr.top + 20) + 'px';
       const stackIndex = row; // simple
       bar.style.top = (sr.top - lr.top + 20 + stackIndex * 18) + 'px';
