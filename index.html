@@ -393,16 +393,17 @@
       }
     });
 
-        const state = {
-          window.state = state;
-      events: [],
-      currentUser: 'fernando',
-      currentView: 'month',
-      currentDate: startOfDay(new Date()),
-      editingId: null,
-      isSaving: false,
-      refreshTimer: null,
-    };
+const state = {
+  events: [],
+  currentUser: 'fernando',
+  currentView: 'month',
+  currentDate: startOfDay(new Date()),
+  editingId: null,
+  isSaving: false,
+  refreshTimer: null,
+};
+
+window.state = state;
 
     const monthNames = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
     const weekNames = ['Lunes','Martes','Miércoles','Jueves','Viernes','Sábado','Domingo'];
