@@ -672,19 +672,16 @@
         if (ymd === todayYmd) day.classList.add('today');
 
         const topIcon = (items[0] && iconFor(items[0])) ? `<div class="corner-icon has-icon">${iconFor(items[0])}</div>` : '';
-        const shown = items.slice(0, maxItems).map(ev => {
+       const shown = items
+  .filter(ev => normalizeDate(ev.enddate || ev.date) === normalizeDate(ev.date)) // SOLO eventos de 1 día
+  .slice(0, maxItems)
+  .map(ev => {
           const sub = window.innerWidth <= 760 ? '' : summarizeEvent(ev, ymd);
           const title = compactTitle(ev.title, window.innerWidth <= 760 ? 10 : 18);
           const evStart = normalizeDate(ev.date);
           const evEnd = normalizeDate(ev.enddate || ev.date || '');
           const isMulti = evEnd && evEnd !== evStart;
           let style = '';
-          if (isMulti) {
-            const prevIn = eventSpansDate(ev, toYMD(addDays(date,-1)));
-            const nextIn = eventSpansDate(ev, toYMD(addDays(date, 1)));
-            if (prevIn) style += 'border-top-left-radius:0;border-bottom-left-radius:0;margin-left:-12px;padding-left:6px;';
-            if (nextIn) style += 'border-top-right-radius:0;border-bottom-right-radius:0;margin-right:-12px;padding-right:6px;';
-          }
           const showTitle = !isMulti || ymd === evStart;
           return `<div class="event-pill ${ownerClass(ev.who)}" style="${style}" data-id="${escapeHtml(ev.id)}">${showTitle ? escapeHtml(title) : ''}${sub && showTitle ? `<small>${escapeHtml(sub)}</small>` : ''}</div>`;
         }).join('');
@@ -1323,7 +1320,9 @@ function drawMultiDayBars() {
       bar.className = 'md-bar ' + cls;
       bar.style.left = (sr.left - lr.left + 2) + 'px';
       bar.style.width = (er.right - sr.left - 4) + 'px';
-      bar.style.top = (sr.top - lr.top + 24) + 'px';
+      bar.style.top = (sr.top - lr.top + 20) + 'px';
+      const stackIndex = row; // simple
+      bar.style.top = (sr.top - lr.top + 20 + stackIndex * 18) + 'px';
       bar.style.height = '20px';
       const isFirst = cells[row*7+startCol].dataset.ymd === evStart;
       const icon = window.iconFor ? (iconFor(ev)||'') : '';
