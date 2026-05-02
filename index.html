@@ -91,6 +91,7 @@
 
     /* ── WEEKDAY ROW ── */
     .month-view { flex:1; min-height:0; display:flex; flex-direction:column; }
+    #cal-grid-wrap { flex:1; min-height:0; }
     .card.calendar-shell { flex:1; min-height:0; display:flex; flex-direction:column; border:none!important; box-shadow:none!important; border-radius:0!important; }
     .month-bar { display:none; } /* hidden - we use topbar nav */
     .legend { display:none; } /* hidden */
@@ -282,7 +283,7 @@
         <div class="weekday">vie</div>
         <div class="weekday">sáb</div><div class="weekday">dom</div>
       </div>
-      <div class="month-grid" id="monthGrid"></div>
+      <div id="cal-grid-wrap" style="position:relative;flex:1;min-height:0;display:flex;flex-direction:column;"><div class="month-grid" id="monthGrid"></div><div id="multiday-layer" style="position:absolute;top:0;left:0;right:0;bottom:0;pointer-events:none;z-index:10;"></div></div>
     </div>
 
     <div class="week-view hidden" id="weekView">
