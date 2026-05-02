@@ -7,124 +7,60 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="default"/>
   <meta name="apple-mobile-web-app-title" content="Calendario"/>
   <title>Calendario familiar</title>
-  <link rel="icon" type="image/png" href="icon.png">
-  <link rel="apple-touch-icon" href="icon.png">
+  <link rel="apple-touch-icon" href="icon.png"/>
   <style>
-    :root {
-      --sat:#edf6ff; --sat-txt:#1a73e8;
-      --sun:#fff0f5; --sun-txt:#c62828;
-      --fernando:#c8dcff; --yolanda:#fcd7ee; --both:#c6f0d0;
-      --guardia-bg:#ffc8c8; --guardia-bd:#ff9999;
-      --malva-bg:#e8ccff; --malva-bd:#c084fc;
-      --line:#d1d5db; --muted:#6b7280; --text:#111827;
-      --primary:#2563eb; --primary-soft:#eff6ff;
-      --radius:0;
-      --shadow:none;
+    :root{
+      --sat:#edf6ff;--sat-txt:#1a73e8;
+      --sun:#fff0f5;--sun-txt:#c62828;
+      --fernando:#c8dcff;--yolanda:#fcd7ee;--both:#c6f0d0;
+      --guardia-bg:#ffc8c8;--malva-bg:#e8ccff;
+      --line:#d1d5db;--muted:#6b7280;--text:#111827;
+      --primary:#2563eb;--primary-soft:#eff6ff;
       --top:env(safe-area-inset-top,44px);
       --bot:env(safe-area-inset-bottom,20px);
     }
     *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
     html,body{height:100%;overflow:hidden;}
-    body{
-      font-family:-apple-system,"Helvetica Neue",Arial,sans-serif;
-      background:#fff; color:var(--text);
-      height:100dvh;
-      display:flex; flex-direction:column;
-      padding-top:var(--top);
-    }
+    body{font-family:-apple-system,"Helvetica Neue",Arial,sans-serif;background:#fff;color:var(--text);height:100dvh;display:flex;flex-direction:column;padding-top:var(--top);}
     button{font:inherit;cursor:pointer;}
     button:disabled{opacity:.5;cursor:not-allowed;}
     .hidden{display:none!important;}
 
-    /* ── HEADER ── */
-    .topbar {
-      display:flex; align-items:center; gap:4px;
-      padding:6px 8px 5px;
-      background:#fff; border-bottom:1px solid var(--line);
-      flex-shrink:0; flex-wrap:nowrap;
-      border-radius:0; box-shadow:none; border:none;
-      border-bottom:1px solid var(--line);
-    }
-    /* Month title (was h1 in title-wrap) */
-    .title-wrap { display:contents; }
-    .title-wrap h1 {
-      flex:1; font-size:1.25rem; font-weight:800;
-      letter-spacing:-.02em; line-height:1; margin:0;
-      order:2;
-    }
-    .title-wrap .subtitle { display:none; }
-
-    /* Nav buttons */
-    .nav-btn {
-      width:36px; height:36px; border:none; background:none;
-      font-size:1.5rem; color:var(--primary);
-      display:flex; align-items:center; justify-content:center;
-      border-radius:50%; flex-shrink:0; padding:0;
-    }
+    /* HEADER */
+    .topbar,.card.topbar{display:flex;align-items:center;gap:4px;padding:6px 8px 5px;background:#fff;border-bottom:1px solid var(--line);flex-shrink:0;border-radius:0!important;box-shadow:none!important;}
+    .title-wrap{display:contents;}
+    .title-wrap h1{flex:1;font-size:1.25rem;font-weight:800;letter-spacing:-.02em;line-height:1;margin:0;order:2;}
+    .title-wrap .subtitle{display:none;}
+    .nav-btn{width:36px;height:36px;border:none;background:none;font-size:1.5rem;color:var(--primary);display:flex;align-items:center;justify-content:center;border-radius:50%;flex-shrink:0;padding:0;}
     .nav-btn:active{background:var(--primary-soft);}
-    #prevBtn{order:1;}
-    #nextBtn{order:3;}
-
-    /* Who chips */
-    .toolbar {
-      display:flex; gap:4px; align-items:center;
-      flex-shrink:0;
-    }
-    /* First toolbar = who chips */
-    .topbar .toolbar:first-of-type { order:4; }
-    /* Second toolbar = view chips + buttons */
-    .topbar .toolbar:last-of-type { display:none; }
-
-    .who-chip, .view-chip {
-      border-radius:999px; padding:4px 9px;
-      font-size:.72rem; font-weight:700;
-      background:#f3f4f6; color:#374151;
-      border:1.5px solid transparent;
-      white-space:nowrap;
-    }
+    #prevBtn{order:1;}#nextBtn{order:3;}
+    .toolbar{display:flex;gap:4px;align-items:center;flex-shrink:0;}
+    .topbar .toolbar:last-of-type{display:none;}
+    .who-chip,.view-chip{border-radius:999px;padding:5px 11px;font-size:.78rem;font-weight:700;background:#f3f4f6;color:#374151;border:1.5px solid transparent;white-space:nowrap;}
     .who-chip.active[data-who="fernando"]{background:var(--fernando);border-color:#93c5fd;color:#1e40af;}
     .who-chip.active[data-who="yolanda"]{background:var(--yolanda);border-color:#f9a8d4;color:#9d174d;}
     .who-chip.active[data-who="both"]{background:var(--both);border-color:#86efac;color:#166534;}
+    .status{display:none;}
 
-    /* Status */
-    .status { display:none; }
+    /* CALENDAR SHELL */
+    .app{flex:1;min-height:0;display:flex;flex-direction:column;}
+    .card.calendar-shell{flex:1;min-height:0;display:flex;flex-direction:column;border:none!important;box-shadow:none!important;border-radius:0!important;padding:0!important;}
+    .month-bar,.legend{display:none;}
 
-    /* ── WEEKDAY ROW ── */
-    .month-view { flex:1; min-height:0; display:flex; flex-direction:column; }
-    #cal-grid-wrap { flex:1; min-height:0; }
-    .card.calendar-shell { flex:1; min-height:0; display:flex; flex-direction:column; border:none!important; box-shadow:none!important; border-radius:0!important; }
-    .month-bar { display:none; } /* hidden - we use topbar nav */
-    .legend { display:none; } /* hidden */
-
-    .weekday-row {
-      display:grid; grid-template-columns:repeat(7,1fr);
-      border-bottom:2px solid var(--line);
-      background:#fafafa; flex-shrink:0;
-    }
-    .weekday {
-      text-align:center; padding:6px 0;
-      font-size:.82rem; font-weight:800;
-      color:var(--muted); text-transform:uppercase; letter-spacing:.02em;
-    }
+    /* WEEKDAY ROW */
+    .weekday-row{display:grid;grid-template-columns:repeat(7,1fr);border-bottom:2px solid var(--line);background:#fafafa;flex-shrink:0;}
+    .weekday{text-align:center;padding:5px 0;font-size:.78rem;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.02em;}
     .weekday:nth-child(6){color:var(--sat-txt);}
     .weekday:nth-child(7){color:var(--sun-txt);}
 
-    /* ── MONTH GRID ── */
-    .month-grid {
-      display:grid;
-      grid-template-columns:repeat(7,1fr);
-      grid-auto-rows:1fr;
-      flex:1; min-height:0;
-    }
-    .day {
-      border-right:1px solid var(--line);
-      border-bottom:1px solid var(--line);
-      padding:3px 3px 2px;
-      display:flex; flex-direction:column;
-      cursor:pointer; overflow:hidden; position:relative;
-      background:#fff;
-      border-radius:0!important;
-    }
+    /* MONTH VIEW */
+    .month-view{flex:1;min-height:0;display:flex;flex-direction:column;}
+    #cal-wrap{position:relative;flex:1;min-height:0;}
+    .month-grid,.month-grid#monthGrid{display:grid;grid-template-columns:repeat(7,1fr);grid-auto-rows:1fr;width:100%;height:100%;position:absolute;top:0;left:0;}
+    #multiday-layer{position:absolute;top:0;left:0;right:0;bottom:0;pointer-events:none;z-index:5;}
+
+    /* DAY CELLS */
+    .day{border-right:1px solid var(--line);border-bottom:1px solid var(--line);padding:3px 3px 2px;display:flex;flex-direction:column;cursor:pointer;overflow:hidden;background:#fff;border-radius:0!important;}
     .day:nth-child(7n){border-right:none;}
     .day.other-month{background:#f8f9fb;}
     .day.other-month .day-num{color:#c5ccd8;}
@@ -134,59 +70,41 @@
     .day.day-guardia{background:var(--guardia-bg)!important;}
     .day.day-malvarrosa{background:var(--malva-bg)!important;}
     .day:active{filter:brightness(.94);}
-
-    .day-num {
-      font-size:1rem; font-weight:800; line-height:1;
-      margin-bottom:3px;
-      display:flex; align-items:center; justify-content:space-between;
-    }
+    .day-num{font-size:.88rem;font-weight:800;line-height:1;margin-bottom:2px;display:flex;align-items:center;justify-content:space-between;}
     .day.sat .day-num{color:var(--sat-txt);}
     .day.sun .day-num{color:var(--sun-txt);}
-    .day.today .day-num span:first-child {
-      background:var(--primary); color:#fff;
-      border-radius:50%; width:26px; height:26px;
-      display:inline-flex; align-items:center; justify-content:center;
-      font-size:.85rem;
-    }
-    .corner-icon{font-size:.65rem;line-height:1;flex-shrink:0;}
-    .day-cnt{font-size:.6rem;color:var(--muted);font-weight:700;}
-
-    .events-stack{display:flex;flex-direction:column;gap:1px;overflow:hidden;flex:1;}
-    .event-pill{
-      font-size:1rem; font-weight:700;
-      padding:2px 5px; border-radius:4px;
-      white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
-      line-height:1.5; flex-shrink:0;
-    }
-    .more-pill{font-size:.6rem;color:var(--muted);font-weight:700;padding-left:2px;}
+    .day.today .day-num span:first-child{background:var(--primary);color:#fff;border-radius:50%;width:24px;height:24px;display:inline-flex;align-items:center;justify-content:center;font-size:.78rem;}
+    .corner-icon{font-size:.7rem;line-height:1;flex-shrink:0;}
+    .events-stack{display:flex;flex-direction:column;gap:2px;overflow:hidden;flex:1;margin-top:22px;}
+    .event-pill{font-size:.82rem;font-weight:700;padding:2px 4px;border-radius:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.45;flex-shrink:0;}
+    .more-pill{font-size:.65rem;color:var(--muted);font-weight:700;padding-left:2px;}
     .owner-fernando{background:var(--fernando);}
     .owner-yolanda{background:var(--yolanda);}
     .owner-both{background:var(--both);}
     .owner-default{background:#e5e7eb;}
 
-    /* Hide week/day views */
-    .week-view, .day-view { display:none!important; }
+    /* MULTI-DAY BARS */
+    .md-bar{position:absolute;border-radius:4px;font-size:.8rem;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding:2px 5px;line-height:1.4;cursor:pointer;}
+    .md-bar.owner-fernando{background:var(--fernando);}
+    .md-bar.owner-yolanda{background:var(--yolanda);}
+    .md-bar.owner-both{background:var(--both);}
+    .md-bar.owner-default{background:#e5e7eb;}
+    .md-bar:active{opacity:.7;}
 
-    /* ── BOTTOM BAR ── */
-    .app > :not(.card) { display:none; } /* hide status div */
-    .bottombar-custom {
-      display:flex; align-items:center; justify-content:space-between;
-      padding:6px 10px; padding-bottom:max(8px,var(--bot));
-      background:#fff; border-top:1px solid var(--line);
-      flex-shrink:0; gap:6px;
-    }
+    /* WEEK/DAY VIEWS */
+    .week-view,.day-view{display:none!important;}
+
+    /* BOTTOM BAR */
+    .bottombar-custom{display:flex;align-items:center;justify-content:space-between;padding:6px 10px;padding-bottom:max(8px,var(--bot));background:#fff;border-top:1px solid var(--line);flex-shrink:0;gap:6px;}
     .bb-left{display:flex;gap:6px;}
-    .bb-btn{
-      border:none; border-radius:10px; padding:9px 14px;
-      font-size:.88rem; font-weight:700;
-    }
+    .bb-btn{border:none;border-radius:10px;padding:9px 14px;font-size:.88rem;font-weight:700;}
     .bb-btn:active{opacity:.7;}
     .bb-new{background:var(--primary);color:#fff;}
     .bb-ics{background:#f3f4f6;color:#374151;}
     .bb-ai{background:#ede9fe;color:#5b21b6;}
-    #statusTextBottom{font-size:.65rem;color:var(--muted);}
+    #statusTextBottom{font-size:.7rem;color:var(--muted);}
 
-    /* ── MODALS / OVERLAYS ── */
+    /* OVERLAYS */
     .overlay{position:fixed;inset:0;background:rgba(0,0,0,.45);display:none;align-items:flex-end;justify-content:center;z-index:500;}
     .overlay.open{display:flex;}
     .modal{width:100%;max-width:640px;background:#fff;border-radius:22px 22px 0 0;padding:20px 16px;padding-bottom:max(20px,var(--bot));max-height:90vh;overflow-y:auto;-webkit-overflow-scrolling:touch;box-shadow:0 -4px 24px rgba(0,0,0,.15);}
@@ -204,7 +122,7 @@
     .btn-soft{background:#eff6ff;color:#1d4ed8;border:none;border-radius:12px;padding:11px 18px;font-weight:800;font-size:.9rem;}
     .btn-danger{background:#fee2e2;color:#b91c1c;border:none;border-radius:12px;padding:11px 18px;font-weight:800;font-size:.9rem;}
 
-    /* ── PIN ── */
+    /* PIN */
     #pin-screen{position:fixed;inset:0;background:linear-gradient(160deg,#e0eaff,#f9fafb);display:flex;align-items:center;justify-content:center;z-index:9999;padding:2rem;padding-top:max(2rem,var(--top));}
     .pin-card{background:#fff;border-radius:24px;padding:2.5rem 2rem;max-width:320px;width:100%;text-align:center;box-shadow:0 8px 40px rgba(0,0,0,.12);}
     .pin-card h2{font-size:1.4rem;font-weight:800;margin-bottom:4px;}
@@ -222,7 +140,6 @@
 </head>
 <body>
 
-<!-- PIN (unchanged) -->
 <div id="pin-screen">
   <div class="pin-card">
     <h2>Calendario Familiar</h2>
@@ -237,45 +154,33 @@
   </div>
 </div>
 
-<!-- APP — same structure as original but reorganized visually via CSS -->
 <div class="app">
-
-  <!-- TOPBAR: nav buttons + month title + who chips -->
   <div class="card topbar">
     <button class="nav-btn" id="prevBtn">&#8249;</button>
-    <div class="title-wrap">
-      <h1 id="currentTitle">abril 2026</h1>
-    </div>
+    <div class="title-wrap"><h1 id="currentTitle"></h1></div>
     <button class="nav-btn" id="nextBtn">&#8250;</button>
     <div class="toolbar">
       <button class="who-chip active" data-who="fernando" id="whoBtnFernando">Fernando</button>
       <button class="who-chip" data-who="yolanda" id="whoBtnYolanda">Yolanda</button>
       <button class="who-chip" data-who="both" id="whoBtnBoth">Ambos</button>
     </div>
-    <!-- Hidden elements JS needs -->
-    <div style="display:none;">
+    <div class="toolbar" style="display:none;">
       <button class="view-chip active" data-view="month">Mes</button>
       <button class="view-chip" data-view="week">Semana</button>
       <button class="view-chip" data-view="day">Dia</button>
-      <button class="btn-primary" id="newEventBtn"></button>
-      <button class="btn-soft" id="todayBtn"></button>
-      <button class="btn-soft" id="importIcsBtn"></button>
-      <button class="btn-soft" id="aiBtn"></button>
+      <button class="btn-primary" id="newEventBtn" style="display:none;"></button>
+      <button class="btn-soft" id="todayBtn" style="display:none;"></button>
+      <button class="btn-soft" id="importIcsBtn" style="display:none;"></button>
+      <button class="btn-soft" id="aiBtn" style="display:none;"></button>
     </div>
-    <input type="file" id="icsFileInput" accept=".ics" style="display:none"/>
   </div>
+  <input type="file" id="icsFileInput" accept=".ics" style="display:none"/>
 
   <div class="status" id="statusText"></div>
 
-  <!-- CALENDAR SHELL -->
   <div class="card calendar-shell">
-    <div class="month-bar">
-      <button class="nav-btn" id="prevBtn2">‹</button>
-      <div class="month-title" id="currentTitle2"></div>
-      <button class="nav-btn" id="nextBtn2">›</button>
-    </div>
-    <div class="legend" style="display:none;"></div>
-
+    <div class="month-bar"></div>
+    <div class="legend"></div>
     <div id="monthView" class="month-view">
       <div class="weekday-row">
         <div class="weekday">lun</div><div class="weekday">mar</div>
@@ -283,20 +188,16 @@
         <div class="weekday">vie</div>
         <div class="weekday">sáb</div><div class="weekday">dom</div>
       </div>
-      <div id="cal-grid-wrap" style="position:relative;flex:1;min-height:0;display:flex;flex-direction:column;"><div class="month-grid" id="monthGrid"></div><div id="multiday-layer" style="position:absolute;top:0;left:0;right:0;bottom:0;pointer-events:none;z-index:10;"></div></div>
+      <div id="cal-wrap">
+        <div class="month-grid" id="monthGrid"></div>
+        <div id="multiday-layer"></div>
+      </div>
     </div>
-
-    <div class="week-view hidden" id="weekView">
-      <div class="week-grid" id="weekGrid"></div>
-    </div>
-    <div class="day-view hidden" id="dayView">
-      <div class="day-panel" id="dayPanel"></div>
-    </div>
+    <div id="weekView" class="week-view hidden"><div class="week-grid" id="weekGrid"></div></div>
+    <div id="dayView" class="day-view hidden"><div class="day-panel" id="dayPanel"></div></div>
   </div>
-
 </div>
 
-<!-- BOTTOM BAR -->
 <div class="bottombar-custom">
   <div class="bb-left">
     <button class="bb-btn bb-new" onclick="document.getElementById('newEventBtn').click()">＋ Evento</button>
@@ -664,9 +565,7 @@
     }
 
     async function loadEvents(showMessage = false) {
-      if (showMessage) {
-        try { const c=localStorage.getItem('cal-cache'); if(c){state.events=JSON.parse(c);render();} } catch(e){}
-      }
+      // Always fetch fresh - no stale cache
       if (!SCRIPT_URL || SCRIPT_URL.includes('PEGA_AQUI')) {
         setStatus('Pega tu URL de Apps Script en la constante SCRIPT_URL.', true);
         return;
@@ -737,99 +636,13 @@
     function render() {
       els.title.textContent = formatMonthTitle(state.currentDate);
       document.querySelectorAll('.who-chip').forEach(btn => btn.classList.toggle('active', btn.dataset.who === state.currentUser));
-      document.querySelectorAll('.view-chip').forEach(btn => btn.classList.toggle('active', btn.dataset.view === state.currentView));
-      els.monthView.classList.toggle('hidden', state.currentView !== 'month');
-      els.weekView.classList.toggle('hidden', state.currentView !== 'week');
-      els.dayView.classList.toggle('hidden', state.currentView !== 'day');
+      // view managed below
+      if(els.monthView)els.monthView.classList.toggle('hidden', state.currentView !== 'month');
+      if(els.weekView)els.weekView.classList.toggle('hidden', state.currentView !== 'week');
+      if(els.dayView)els.dayView.classList.toggle('hidden', state.currentView !== 'day');
       if (state.currentView === 'month') renderMonth();
       if (state.currentView === 'week') renderWeek();
       if (state.currentView === 'day') renderDay();
-    }
-
-    function renderMultiDayOverlay(gridStart) {
-      const layer = document.getElementById('multiday-layer');
-      if (!layer) return;
-      layer.innerHTML = '';
-      const grid = document.getElementById('monthGrid');
-      if (!grid) return;
-      const cells = grid.querySelectorAll('.day');
-      if (cells.length < 42) return;
-      const gridRect = grid.getBoundingClientRect();
-      const layerRect = layer.getBoundingClientRect();
-
-      // Get multi-day events visible in this grid
-      const multiEvents = state.events.filter(ev => {
-        if (!eventMatchesUser(ev)) return false;
-        const s = normalizeDate(ev.date);
-        const e = normalizeDate(ev.enddate || ev.date || '');
-        return e && e > s;
-      });
-
-      multiEvents.forEach(ev => {
-        const evStart = normalizeDate(ev.date);
-        const evEnd = normalizeDate(ev.enddate);
-        const gridStartYmd = toYMD(gridStart);
-        const gridEndYmd = toYMD(addDays(gridStart, 41));
-        if (evEnd < gridStartYmd || evStart > gridEndYmd) return;
-
-        // Find which row indices this event spans
-        const clampedStart = evStart < gridStartYmd ? gridStartYmd : evStart;
-        const clampedEnd = evEnd > gridEndYmd ? gridEndYmd : evEnd;
-
-        // Split into week rows
-        let cur = new Date(clampedStart + 'T12:00:00');
-        const end = new Date(clampedEnd + 'T12:00:00');
-
-        while (cur <= end) {
-          const dow = (cur.getDay() + 6) % 7; // 0=Mon
-          const rowStart = new Date(cur);
-          // Find end of this week row or event end
-          const rowEnd = new Date(cur);
-          rowEnd.setDate(rowEnd.getDate() + (6 - dow));
-          const segEnd = rowEnd < end ? rowEnd : end;
-
-          // Cell indices
-          const startIdx = Math.round((cur - gridStart) / 86400000);
-          const endIdx = Math.round((segEnd - gridStart) / 86400000);
-
-          if (startIdx >= 0 && startIdx < 42 && cells[startIdx] && cells[endIdx]) {
-            const startCell = cells[startIdx];
-            const endCell = cells[endIdx];
-            const sr = startCell.getBoundingClientRect();
-            const er = endCell.getBoundingClientRect();
-
-            const bar = document.createElement('div');
-            bar.className = 'md-bar ' + ownerClass(ev.who);
-
-            // Vertical position: after day number (about 22px from top)
-            const TOP_OFFSET = 22;
-            const BAR_HEIGHT = 18;
-            // Find row in which this segment falls (0-5)
-            const rowIdx = Math.floor(startIdx / 7);
-            // Get first cell of this row to get y
-            const rowFirstCell = cells[rowIdx * 7];
-            const rfr = rowFirstCell.getBoundingClientRect();
-            const top = (rfr.top - layerRect.top) + TOP_OFFSET;
-
-            bar.style.cssText = [
-              'left:' + (sr.left - layerRect.left + 1) + 'px',
-              'width:' + (er.right - sr.left - 2) + 'px',
-              'top:' + top + 'px',
-              'height:' + BAR_HEIGHT + 'px'
-            ].join(';');
-
-            const icon = iconFor(ev) || '';
-            const isFirstSeg = toYMD(cur) === evStart || toYMD(cur) === toYMD(new Date(clampedStart + 'T12:00:00'));
-            bar.textContent = (icon ? icon + ' ' : '') + (isFirstSeg ? ev.title : '');
-            bar.dataset.id = ev.id;
-            bar.addEventListener('click', () => openEdit(ev.id));
-            layer.appendChild(bar);
-          }
-
-          // Move to next week
-          cur.setDate(cur.getDate() + (7 - dow));
-        }
-      });
     }
 
     function renderMonth() {
@@ -842,13 +655,7 @@
       for (let i = 0; i < 42; i++) {
         const date = addDays(gridStart, i);
         const ymd = toYMD(date);
-        const allItems = eventsForDate(ymd);
-        // Single-day events only in cells (multi-day drawn on overlay)
-        const items = allItems.filter(ev => {
-          const s = normalizeDate(ev.date);
-          const e = normalizeDate(ev.enddate || ev.date || '');
-          return !e || e <= s;
-        });
+        const items = eventsForDate(ymd);
         const day = document.createElement('div');
         const isOtherMonth = date.getMonth() !== currentMonth;
         const weekday = date.getDay();
@@ -876,7 +683,7 @@
             const prevIn = eventSpansDate(ev, toYMD(addDays(date,-1)));
             const nextIn = eventSpansDate(ev, toYMD(addDays(date, 1)));
             if (prevIn) style += 'border-top-left-radius:0;border-bottom-left-radius:0;margin-left:-12px;padding-left:6px;';
-            if (nextIn) style += 'border-top-right-radius:0;border-bottom-right-radius:0;margin-right:-5px;padding-right:5px;';
+            if (nextIn) style += 'border-top-right-radius:0;border-bottom-right-radius:0;margin-right:-12px;padding-right:6px;';
           }
           const showTitle = !isMulti || ymd === evStart;
           return `<div class="event-pill ${ownerClass(ev.who)}" style="${style}" data-id="${escapeHtml(ev.id)}">${showTitle ? escapeHtml(title) : ''}${sub && showTitle ? `<small>${escapeHtml(sub)}</small>` : ''}</div>`;
@@ -889,6 +696,7 @@
           if (pill) { e.stopPropagation(); openEdit(pill.dataset.id); return; }
           openCreate(ymd);
         });
+        day.dataset.ymd = ymd;
         els.monthGrid.appendChild(day);
       }
     }
@@ -899,13 +707,7 @@
       for (let i = 0; i < 7; i++) {
         const date = addDays(start, i);
         const ymd = toYMD(date);
-        const allItems = eventsForDate(ymd);
-        // Single-day events only in cells (multi-day drawn on overlay)
-        const items = allItems.filter(ev => {
-          const s = normalizeDate(ev.date);
-          const e = normalizeDate(ev.enddate || ev.date || '');
-          return !e || e <= s;
-        });
+        const items = eventsForDate(ymd);
         const col = document.createElement('div');
         col.className = 'week-col';
         if (date.getDay() === 6) col.classList.add('sat');
@@ -926,13 +728,7 @@
 
     function renderDay() {
       const ymd = toYMD(state.currentDate);
-      const allItems = eventsForDate(ymd);
-        // Single-day events only in cells (multi-day drawn on overlay)
-        const items = allItems.filter(ev => {
-          const s = normalizeDate(ev.date);
-          const e = normalizeDate(ev.enddate || ev.date || '');
-          return !e || e <= s;
-        });
+      const items = eventsForDate(ymd);
       const eventsHtml = items.length ? items.map(ev => {
         const meta = [];
         if (normalizeTime(ev.time)) meta.push(normalizeTime(ev.time));
@@ -1440,7 +1236,7 @@
       document.getElementById('icsCancelBtn').addEventListener('click', () => { document.getElementById('icsOverlay').style.display = 'none'; });
       document.getElementById('icsImportBtn').addEventListener('click', confirmIcsImport);
       document.getElementById('icsOverlay').addEventListener('click', (e) => { if (e.target === document.getElementById('icsOverlay')) document.getElementById('icsOverlay').style.display = 'none'; });
-      document.querySelectorAll('.view-chip').forEach(btn => btn.addEventListener('click', () => { state.currentView = btn.dataset.view; render(); }));
+      // view managed below
     }
 
     function startAutoRefresh() {
@@ -1466,34 +1262,30 @@
     startAutoRefresh();
   </script>
 <script>
-// Mirror status to bottom bar
-(function() {
-  const obs = new MutationObserver(() => {
-    const bt = document.getElementById('statusTextBottom');
-    const st = document.getElementById('statusText');
-    if (bt && st) bt.textContent = st.textContent;
-  });
-  const st = document.getElementById('statusText');
-  if (st) obs.observe(st, {childList:true, characterData:true, subtree:true});
-})();
-
-// Swipe left/right to change month
-(function() {
-  let startX = 0, startY = 0;
-  const grid = document.getElementById('monthGrid');
-  if (!grid) return;
-  grid.addEventListener('touchstart', e => {
-    startX = e.touches[0].clientX;
-    startY = e.touches[0].clientY;
-  }, {passive:true});
-  grid.addEventListener('touchend', e => {
-    const dx = e.changedTouches[0].clientX - startX;
-    const dy = e.changedTouches[0].clientY - startY;
-    if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy) * 1.5) {
-      if (dx < 0) document.getElementById('nextBtn').click();
+// Swipe to change month
+(function(){
+  let sx=0,sy=0;
+  const g=document.getElementById('monthGrid');
+  if(!g)return;
+  g.addEventListener('touchstart',e=>{sx=e.touches[0].clientX;sy=e.touches[0].clientY;},{passive:true});
+  g.addEventListener('touchend',e=>{
+    const dx=e.changedTouches[0].clientX-sx;
+    const dy=e.changedTouches[0].clientY-sy;
+    if(Math.abs(dx)>50&&Math.abs(dx)>Math.abs(dy)*1.5){
+      if(dx<0)document.getElementById('nextBtn').click();
       else document.getElementById('prevBtn').click();
     }
-  }, {passive:true});
+  },{passive:true});
+})();
+// Mirror status
+(function(){
+  const obs=new MutationObserver(()=>{
+    const b=document.getElementById('statusTextBottom');
+    const s=document.getElementById('statusText');
+    if(b&&s)b.textContent=s.textContent;
+  });
+  const s=document.getElementById('statusText');
+  if(s)obs.observe(s,{childList:true,characterData:true,subtree:true});
 })();
 </script>
 </body>
