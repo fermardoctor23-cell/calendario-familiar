@@ -92,13 +92,41 @@
     .md-bar:active{opacity:.7;}
 
     /* WEEK/DAY VIEWS */
-    .week-view,.day-view{display:none!important;}
+    .week-view{flex:1;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;}
+    .day-view{display:none!important;}
+
+
+    /* WEEK VIEW */
+    .week-grid{display:grid;grid-template-columns:repeat(7,1fr);min-height:100%;border-left:1px solid var(--line);}
+    .week-col{border-right:1px solid var(--line);padding:5px 3px;display:flex;flex-direction:column;gap:4px;min-height:400px;}
+    .week-col:last-child{border-right:none;}
+    .week-col.sat{background:var(--sat);}
+    .week-col.sun{background:var(--sun);}
+    .week-col.today-col{background:#eff6ff;}
+    .week-col.day-guardia{background:var(--guardia-bg)!important;}
+    .week-col.day-malvarrosa{background:var(--malva-bg)!important;}
+    .week-day-name{font-size:.65rem;font-weight:800;color:var(--muted);text-transform:uppercase;text-align:center;}
+    .week-day-num{font-size:.95rem;font-weight:800;width:28px;height:28px;display:flex;align-items:center;justify-content:center;margin:2px auto 4px;border-radius:50%;}
+    .week-col.today-col .week-day-num{background:var(--primary);color:#fff;}
+    .week-col.sat .week-day-num{color:var(--sat-txt);}
+    .week-col.sun .week-day-num{color:var(--sun-txt);}
+    .week-ev{border-radius:6px;padding:4px 5px;font-size:.72rem;font-weight:700;cursor:pointer;margin-bottom:2px;}
+    .week-ev:active{opacity:.7;}
+    .week-ev .ev-time{font-size:.62rem;color:var(--muted);display:block;}
+    .week-ev.owner-fernando{background:var(--fernando);}
+    .week-ev.owner-yolanda{background:var(--yolanda);}
+    .week-ev.owner-both{background:var(--both);}
+    .week-ev.owner-default{background:#e5e7eb;}
 
     /* BOTTOM BAR */
     .bottombar-custom{display:flex;align-items:center;justify-content:space-between;padding:6px 10px;padding-bottom:max(8px,var(--bot));background:#fff;border-top:1px solid var(--line);flex-shrink:0;gap:6px;}
     .bb-left{display:flex;gap:6px;}
     .bb-btn{border:none;border-radius:10px;padding:9px 14px;font-size:.88rem;font-weight:700;}
     .bb-btn:active{opacity:.7;}
+    .bb-views{display:flex;gap:4px;}
+    .bb-view{border:none;border-radius:10px;padding:8px 11px;font-size:.78rem;font-weight:700;background:#f3f4f6;color:#374151;cursor:pointer;}
+    .bb-view.active{background:var(--primary);color:#fff;}
+    .bb-view:active{opacity:.7;}
     .bb-new{background:var(--primary);color:#fff;}
     .bb-ics{background:#f3f4f6;color:#374151;}
     .bb-ai{background:#ede9fe;color:#5b21b6;}
@@ -123,25 +151,6 @@
     .btn-danger{background:#fee2e2;color:#b91c1c;border:none;border-radius:12px;padding:11px 18px;font-weight:800;font-size:.9rem;}
 
     /* PIN */
-
-    /* DAY EVENTS POPUP */
-    #dayPopupOverlay{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:600;display:none;align-items:flex-end;justify-content:center;}
-    #dayPopupOverlay.open{display:flex;}
-    #dayPopup{width:100%;max-width:640px;background:#fff;border-radius:22px 22px 0 0;padding:20px 16px;padding-bottom:max(20px,var(--bot));max-height:75vh;overflow-y:auto;-webkit-overflow-scrolling:touch;box-shadow:0 -4px 24px rgba(0,0,0,.18);}
-    .dp-handle{width:40px;height:4px;background:#e5e7eb;border-radius:2px;margin:0 auto 14px;}
-    .dp-date{font-size:1rem;font-weight:800;margin-bottom:12px;color:var(--text);text-transform:capitalize;}
-    .dp-empty{color:var(--muted);font-size:.9rem;padding:10px 0;}
-    .dp-ev{border-radius:10px;padding:10px 12px;margin-bottom:8px;cursor:pointer;}
-    .dp-ev:active{opacity:.75;}
-    .dp-ev.owner-fernando{background:var(--fernando);}
-    .dp-ev.owner-yolanda{background:var(--yolanda);}
-    .dp-ev.owner-both{background:var(--both);}
-    .dp-ev.owner-default{background:#f3f4f6;}
-    .dp-ev-top{font-size:.95rem;font-weight:700;display:flex;align-items:center;gap:6px;flex-wrap:wrap;}
-    .dp-time{font-size:.85rem;font-weight:700;color:var(--primary);margin-left:auto;}
-    .dp-ev-note{font-size:.8rem;color:var(--muted);margin-top:3px;}
-    .dp-ev-who{font-size:.75rem;color:var(--muted);margin-top:2px;}
-
     #pin-screen{position:fixed;inset:0;background:linear-gradient(160deg,#e0eaff,#f9fafb);display:flex;align-items:center;justify-content:center;z-index:9999;padding:2rem;padding-top:max(2rem,var(--top));}
     .pin-card{background:#fff;border-radius:24px;padding:2.5rem 2rem;max-width:320px;width:100%;text-align:center;box-shadow:0 8px 40px rgba(0,0,0,.12);}
     .pin-card h2{font-size:1.4rem;font-weight:800;margin-bottom:4px;}
@@ -220,8 +229,12 @@
 <div class="bottombar-custom">
   <div class="bb-left">
     <button class="bb-btn bb-new" onclick="document.getElementById('newEventBtn').click()">＋ Evento</button>
-    <button class="bb-btn bb-ics" onclick="document.getElementById('icsFileInput').click()">📥 Importar .ics</button>
+    <button class="bb-btn bb-ics" onclick="document.getElementById('icsFileInput').click()">📥 .ics</button>
     <button class="bb-btn bb-ai" onclick="document.getElementById('aiBtn').click()">✨ IA</button>
+  </div>
+  <div class="bb-views">
+    <button class="bb-view active" id="bbMonth" onclick="switchCalView('month')">📅 Mes</button>
+    <button class="bb-view" id="bbWeek" onclick="switchCalView('week')">📆 Semana</button>
   </div>
   <span id="statusTextBottom"></span>
 </div>
@@ -718,7 +731,7 @@ const shown = singleDayItems
         day.addEventListener('click', (e) => {
           const pill = e.target.closest('.event-pill');
           if (pill) { e.stopPropagation(); openEdit(pill.dataset.id); return; }
-          showDayEvents(ymd);
+          openCreate(ymd);
         });
         day.dataset.ymd = ymd;
         els.monthGrid.appendChild(day);
@@ -1303,58 +1316,6 @@ const shown = singleDayItems
 })();
 
 // Multi-day event overlay
-// ── DAY EVENTS POPUP ──────────────────────────────
-function showDayEvents(ymd) {
-  const overlay = document.getElementById('dayPopupOverlay');
-  const content = document.getElementById('dayPopupContent');
-  if (!overlay || !content) return;
-
-  const [y, m, d] = ymd.split('-');
-  const months = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
-  const weekdays = ['domingo','lunes','martes','miércoles','jueves','viernes','sábado'];
-  const date = new Date(ymd + 'T12:00:00');
-  const dateLabel = weekdays[date.getDay()] + ' ' + parseInt(d) + ' de ' + months[parseInt(m)-1] + ' ' + y;
-
-  const dayEvs = (state.events || []).filter(ev => {
-    if (!eventMatchesUser(ev)) return false;
-    return eventSpansDate(ev, ymd);
-  }).sort((a,b) => (a.time||'').localeCompare(b.time||''));
-
-  const typeLabels = {guardia_hcuv:'🏥',guardia_malvarrosa:'🚑',cumpleanos:'🎂',comida:'🍽️',viaje:'✈️',reunion:'👥',congreso:'🎓',medico:'🩺',vacaciones:'🏖️',normal:'📅'};
-  const ownerNames = {fernando:'Fernando', yolanda:'Yolanda', both:'Ambos'};
-
-  let html = `<div class="dp-date">${dateLabel}</div>`;
-
-  if (dayEvs.length === 0) {
-    html += '<div class="dp-empty">No hay eventos este día</div>';
-  } else {
-    dayEvs.forEach(ev => {
-      const icon = typeLabels[ev.type] || '📅';
-      const who = ownerNames[ev.who] || ev.who;
-      const time = ev.time ? `<span class="dp-time">${ev.time.substring(0,5)}</span>` : '';
-      html += `<div class="dp-ev ${ownerClass(ev.who)}" data-id="${escapeHtml(ev.id)}">
-        <div class="dp-ev-top">${icon} <strong>${escapeHtml(ev.title)}</strong>${time}</div>
-        ${ev.note ? `<div class="dp-ev-note">${escapeHtml(ev.note)}</div>` : ''}
-        <div class="dp-ev-who">${who}</div>
-      </div>`;
-    });
-  }
-
-  content.innerHTML = html;
-
-  // Bind edit on event tap
-  content.querySelectorAll('.dp-ev[data-id]').forEach(el => {
-    el.addEventListener('click', () => {
-      overlay.classList.remove('open');
-      overlay.style.display = 'none';
-      openEdit(el.dataset.id);
-    });
-  });
-
-  overlay.style.display = 'flex';
-  requestAnimationFrame(() => overlay.classList.add('open'));
-}
-
 function drawMultiDayBars() {
   const layer = document.getElementById('multiday-layer');
   if (!layer) return;
@@ -1424,6 +1385,48 @@ bar.style.width = (er.right - sr.left) + 'px';
     }
   };
 })();
+// Switch between month and week view
+function switchCalView(v) {
+  const mg = document.getElementById('monthGrid');
+  const wv = document.getElementById('weekView');
+  const wr = document.getElementById('wdayRow');
+  const cw = document.getElementById('cal-wrap');
+  const bm = document.getElementById('bbMonth');
+  const bw = document.getElementById('bbWeek');
+  if (v === 'week') {
+    if (mg) mg.classList.add('hidden');
+    if (cw) cw.classList.add('hidden');
+    if (wr) wr.classList.add('hidden');
+    if (wv) { wv.classList.remove('hidden'); wv.style.display = 'block'; }
+    if (bm) bm.classList.remove('active');
+    if (bw) bw.classList.add('active');
+    // Force week render via JS state
+    if (typeof state !== 'undefined') {
+      state.currentView = 'week';
+      if (typeof render === 'function') render();
+    }
+    // Wire week event clicks
+    setTimeout(() => {
+      document.querySelectorAll('.week-event,.week-ev').forEach(el => {
+        el.addEventListener('click', function() {
+          if (typeof openEdit === 'function') openEdit(this.dataset.id);
+        });
+      });
+    }, 100);
+  } else {
+    if (mg) mg.classList.remove('hidden');
+    if (cw) cw.classList.remove('hidden');
+    if (wr) wr.classList.remove('hidden');
+    if (wv) { wv.classList.add('hidden'); wv.style.display = ''; }
+    if (bm) bm.classList.add('active');
+    if (bw) bw.classList.remove('active');
+    if (typeof state !== 'undefined') {
+      state.currentView = 'month';
+      if (typeof render === 'function') render();
+    }
+  }
+}
+
 // Mirror status
 (function(){
   const obs=new MutationObserver(()=>{
@@ -1435,13 +1438,5 @@ bar.style.width = (er.right - sr.left) + 'px';
   if(s)obs.observe(s,{childList:true,characterData:true,subtree:true});
 })();
 </script>
-
-  <!-- DAY EVENTS POPUP -->
-  <div id="dayPopupOverlay" onclick="if(event.target===this){this.classList.remove('open');this.style.display='none';}">
-    <div id="dayPopup">
-      <div class="dp-handle"></div>
-      <div id="dayPopupContent"></div>
-    </div>
-  </div>
 </body>
 </html>
