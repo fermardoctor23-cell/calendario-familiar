@@ -229,15 +229,15 @@
 
 <div class="bottombar-custom">
   <div class="bottombar-row">
-    <button class="bb-btn bb-new" onclick="document.getElementById('newEventBtn').click()">＋ Evento</button>
-    <button class="bb-btn bb-ics" onclick="document.getElementById('icsFileInput').click()">📥 .ics</button>
-    <button class="bb-btn bb-ai" onclick="document.getElementById('aiBtn').click()">✨ IA</button>
-    <div style="flex:1"></div>
     <button class="bb-view active" id="bbMonth" onclick="switchCalView('month')">📅 Mes</button>
     <button class="bb-view" id="bbWeek" onclick="switchCalView('week')">📆 Semana</button>
-  </div>
-  <div class="bottombar-row" style="justify-content:flex-end;">
+    <div style="flex:1"></div>
     <span id="statusTextBottom" style="font-size:.65rem;color:var(--muted);"></span>
+  </div>
+  <div class="bottombar-row">
+    <button class="bb-btn bb-new" onclick="document.getElementById('newEventBtn').click()">＋ Evento</button>
+    <button class="bb-btn bb-ics" onclick="document.getElementById('icsFileInput').click()">📥 Importar .ics</button>
+    <button class="bb-btn bb-ai" onclick="document.getElementById('aiBtn').click()">✨ IA</button>
   </div>
 </div>
 
