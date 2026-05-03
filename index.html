@@ -123,6 +123,25 @@
     .btn-danger{background:#fee2e2;color:#b91c1c;border:none;border-radius:12px;padding:11px 18px;font-weight:800;font-size:.9rem;}
 
     /* PIN */
+
+    /* DAY EVENTS POPUP */
+    #dayPopupOverlay{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:600;display:none;align-items:flex-end;justify-content:center;}
+    #dayPopupOverlay.open{display:flex;}
+    #dayPopup{width:100%;max-width:640px;background:#fff;border-radius:22px 22px 0 0;padding:20px 16px;padding-bottom:max(20px,var(--bot));max-height:75vh;overflow-y:auto;-webkit-overflow-scrolling:touch;box-shadow:0 -4px 24px rgba(0,0,0,.18);}
+    .dp-handle{width:40px;height:4px;background:#e5e7eb;border-radius:2px;margin:0 auto 14px;}
+    .dp-date{font-size:1rem;font-weight:800;margin-bottom:12px;color:var(--text);text-transform:capitalize;}
+    .dp-empty{color:var(--muted);font-size:.9rem;padding:10px 0;}
+    .dp-ev{border-radius:10px;padding:10px 12px;margin-bottom:8px;cursor:pointer;}
+    .dp-ev:active{opacity:.75;}
+    .dp-ev.owner-fernando{background:var(--fernando);}
+    .dp-ev.owner-yolanda{background:var(--yolanda);}
+    .dp-ev.owner-both{background:var(--both);}
+    .dp-ev.owner-default{background:#f3f4f6;}
+    .dp-ev-top{font-size:.95rem;font-weight:700;display:flex;align-items:center;gap:6px;flex-wrap:wrap;}
+    .dp-time{font-size:.85rem;font-weight:700;color:var(--primary);margin-left:auto;}
+    .dp-ev-note{font-size:.8rem;color:var(--muted);margin-top:3px;}
+    .dp-ev-who{font-size:.75rem;color:var(--muted);margin-top:2px;}
+
     #pin-screen{position:fixed;inset:0;background:linear-gradient(160deg,#e0eaff,#f9fafb);display:flex;align-items:center;justify-content:center;z-index:9999;padding:2rem;padding-top:max(2rem,var(--top));}
     .pin-card{background:#fff;border-radius:24px;padding:2.5rem 2rem;max-width:320px;width:100%;text-align:center;box-shadow:0 8px 40px rgba(0,0,0,.12);}
     .pin-card h2{font-size:1.4rem;font-weight:800;margin-bottom:4px;}
@@ -699,7 +718,7 @@ const shown = singleDayItems
         day.addEventListener('click', (e) => {
           const pill = e.target.closest('.event-pill');
           if (pill) { e.stopPropagation(); openEdit(pill.dataset.id); return; }
-          openCreate(ymd);
+          showDayEvents(ymd);
         });
         day.dataset.ymd = ymd;
         els.monthGrid.appendChild(day);
@@ -1284,6 +1303,58 @@ const shown = singleDayItems
 })();
 
 // Multi-day event overlay
+// ── DAY EVENTS POPUP ──────────────────────────────
+function showDayEvents(ymd) {
+  const overlay = document.getElementById('dayPopupOverlay');
+  const content = document.getElementById('dayPopupContent');
+  if (!overlay || !content) return;
+
+  const [y, m, d] = ymd.split('-');
+  const months = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+  const weekdays = ['domingo','lunes','martes','miércoles','jueves','viernes','sábado'];
+  const date = new Date(ymd + 'T12:00:00');
+  const dateLabel = weekdays[date.getDay()] + ' ' + parseInt(d) + ' de ' + months[parseInt(m)-1] + ' ' + y;
+
+  const dayEvs = (state.events || []).filter(ev => {
+    if (!eventMatchesUser(ev)) return false;
+    return eventSpansDate(ev, ymd);
+  }).sort((a,b) => (a.time||'').localeCompare(b.time||''));
+
+  const typeLabels = {guardia_hcuv:'🏥',guardia_malvarrosa:'🚑',cumpleanos:'🎂',comida:'🍽️',viaje:'✈️',reunion:'👥',congreso:'🎓',medico:'🩺',vacaciones:'🏖️',normal:'📅'};
+  const ownerNames = {fernando:'Fernando', yolanda:'Yolanda', both:'Ambos'};
+
+  let html = `<div class="dp-date">${dateLabel}</div>`;
+
+  if (dayEvs.length === 0) {
+    html += '<div class="dp-empty">No hay eventos este día</div>';
+  } else {
+    dayEvs.forEach(ev => {
+      const icon = typeLabels[ev.type] || '📅';
+      const who = ownerNames[ev.who] || ev.who;
+      const time = ev.time ? `<span class="dp-time">${ev.time.substring(0,5)}</span>` : '';
+      html += `<div class="dp-ev ${ownerClass(ev.who)}" data-id="${escapeHtml(ev.id)}">
+        <div class="dp-ev-top">${icon} <strong>${escapeHtml(ev.title)}</strong>${time}</div>
+        ${ev.note ? `<div class="dp-ev-note">${escapeHtml(ev.note)}</div>` : ''}
+        <div class="dp-ev-who">${who}</div>
+      </div>`;
+    });
+  }
+
+  content.innerHTML = html;
+
+  // Bind edit on event tap
+  content.querySelectorAll('.dp-ev[data-id]').forEach(el => {
+    el.addEventListener('click', () => {
+      overlay.classList.remove('open');
+      overlay.style.display = 'none';
+      openEdit(el.dataset.id);
+    });
+  });
+
+  overlay.style.display = 'flex';
+  requestAnimationFrame(() => overlay.classList.add('open'));
+}
+
 function drawMultiDayBars() {
   const layer = document.getElementById('multiday-layer');
   if (!layer) return;
@@ -1364,5 +1435,13 @@ bar.style.width = (er.right - sr.left) + 'px';
   if(s)obs.observe(s,{childList:true,characterData:true,subtree:true});
 })();
 </script>
+
+  <!-- DAY EVENTS POPUP -->
+  <div id="dayPopupOverlay" onclick="if(event.target===this){this.classList.remove('open');this.style.display='none';}">
+    <div id="dayPopup">
+      <div class="dp-handle"></div>
+      <div id="dayPopupContent"></div>
+    </div>
+  </div>
 </body>
 </html>
