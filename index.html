@@ -56,7 +56,7 @@
     /* MONTH VIEW */
     .month-view{flex:1;min-height:0;display:flex;flex-direction:column;}
     #cal-wrap{position:relative;flex:1;min-height:0;}
-    .month-grid,.month-grid#monthGrid{display:grid;grid-template-columns:repeat(7,1fr);grid-auto-rows:1fr;width:100%;height:100%;position:absolute;top:0;left:0;}
+    .month-grid,.month-grid#monthGrid{display:grid;grid-template-columns:repeat(7,1fr);grid-auto-rows:1fr;width:100%;height:100%;position:absolute;top:0;left:0;overflow:hidden;}
     #multiday-layer{position:absolute;top:0;left:0;right:0;bottom:0;pointer-events:none;z-index:5;}
 
     /* DAY CELLS */
@@ -759,7 +759,7 @@ const shown = singleDayItems
         col.addEventListener('click', (e) => {
           const eventCard = e.target.closest('.week-event');
           if (eventCard) openEdit(eventCard.dataset.id);
-          else openCreate(ymd);
+          else showDayEvents(ymd);
         });
         els.weekGrid.appendChild(col);
       }
@@ -1341,6 +1341,27 @@ function showDayEvents(ymd) {
   overlay.style.display='flex';
 }
 
+
+// Hide 6th row if month fits in 5 rows
+function trimGridRows() {
+  const grid = document.getElementById('monthGrid');
+  if (!grid) return;
+  const cells = grid.querySelectorAll('.day');
+  if (cells.length <= 35) return; // already 5 rows
+  // Check if row 6 is all other-month
+  let allOther = true;
+  for (let i = 35; i < cells.length; i++) {
+    if (!cells[i].classList.contains('other-month')) { allOther = false; break; }
+  }
+  if (allOther) {
+    for (let i = 35; i < cells.length; i++) cells[i].style.display = 'none';
+    grid.style.gridTemplateRows = 'repeat(5, 1fr)';
+  } else {
+    for (let i = 35; i < cells.length; i++) cells[i].style.display = '';
+    grid.style.gridTemplateRows = '';
+  }
+}
+
 // Swipe to change month
 (function(){
   let sx=0,sy=0;
@@ -1410,7 +1431,7 @@ bar.style.width = (er.right - sr.left) + 'px';
       const isFirst = cells[row*7+startCol].dataset.ymd === evStart;
       const icon = (typeof iconFor === 'function') ? (iconFor(ev)||'') : '';
       bar.textContent = isFirst ? (icon ? icon+' ' : '') + ev.title : '';
-      bar.addEventListener('click', e => { e.stopPropagation(); if(window.openEdit) openEdit(ev.id); });
+      bar.addEventListener('click', e => { e.stopPropagation(); e.preventDefault(); if(typeof openEdit==='function') openEdit(ev.id); });
       layer.appendChild(bar);
     }
   });
@@ -1423,7 +1444,7 @@ bar.style.width = (er.right - sr.left) + 'px';
   window.render = function() {
     origRender.apply(this, arguments);
     if (typeof state !== 'undefined' && state.currentView === 'month') {
-      requestAnimationFrame(drawMultiDayBars);
+      requestAnimationFrame(() => { trimGridRows(); drawMultiDayBars(); });
     }
   };
 })();
