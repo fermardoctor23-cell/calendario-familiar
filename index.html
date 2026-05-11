@@ -56,7 +56,7 @@
     /* MONTH VIEW */
     .month-view{flex:1;min-height:0;display:flex;flex-direction:column;}
     #cal-wrap{position:relative;flex:1;min-height:0;}
-    .month-grid,.month-grid#monthGrid{display:grid;grid-template-columns:repeat(7,1fr);grid-auto-rows:1fr;width:100%;height:100%;position:absolute;top:0;left:0;overflow:hidden;}
+    .month-grid,.month-grid#monthGrid{display:grid;grid-template-columns:repeat(7,1fr);grid-auto-rows:1fr;width:100%;height:100%;position:absolute;top:0;left:0;}
     #multiday-layer{position:absolute;top:0;left:0;right:0;bottom:0;pointer-events:none;z-index:5;}
 
     /* DAY CELLS */
@@ -152,6 +152,23 @@
     .btn-danger{background:#fee2e2;color:#b91c1c;border:none;border-radius:12px;padding:11px 18px;font-weight:800;font-size:.9rem;}
 
     /* PIN */
+
+    #dayPopupOverlay{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:600;display:none;align-items:flex-end;justify-content:center;}
+    #dayPopup{width:100%;max-width:640px;background:#fff;border-radius:22px 22px 0 0;padding:16px;padding-bottom:max(20px,var(--bot));max-height:75vh;overflow-y:auto;}
+    .dp-handle{width:36px;height:4px;background:#e5e7eb;border-radius:2px;margin:0 auto 12px;}
+    .dp-date{font-size:1rem;font-weight:800;margin-bottom:10px;text-transform:capitalize;}
+    .dp-empty{color:var(--muted);font-size:.9rem;text-align:center;padding:10px 0;}
+    .dp-ev{border-radius:10px;padding:10px 12px;margin-bottom:7px;cursor:pointer;}
+    .dp-ev:active{opacity:.75;}
+    .dp-ev.owner-fernando{background:var(--fernando);}
+    .dp-ev.owner-yolanda{background:var(--yolanda);}
+    .dp-ev.owner-both{background:var(--both);}
+    .dp-ev.owner-default{background:#f3f4f6;}
+    .dp-ev-top{font-size:.95rem;font-weight:700;display:flex;align-items:center;gap:6px;flex-wrap:wrap;}
+    .dp-time{font-size:.85rem;color:var(--primary);margin-left:auto;font-weight:700;}
+    .dp-ev-note{font-size:.78rem;color:var(--muted);margin-top:2px;}
+    .dp-ev-who{font-size:.72rem;color:var(--muted);margin-top:2px;}
+
     #pin-screen{position:fixed;inset:0;background:linear-gradient(160deg,#e0eaff,#f9fafb);display:flex;align-items:center;justify-content:center;z-index:9999;padding:2rem;padding-top:max(2rem,var(--top));}
     .pin-card{background:#fff;border-radius:24px;padding:2.5rem 2rem;max-width:320px;width:100%;text-align:center;box-shadow:0 8px 40px rgba(0,0,0,.12);}
     .pin-card h2{font-size:1.4rem;font-weight:800;margin-bottom:4px;}
@@ -1302,64 +1319,64 @@ const shown = singleDayItems
   </script>
 <script>
 
-// DAY EVENTS POPUP
-function showDayEvents(ymd) {
-  const overlay = document.getElementById('dayPopupOverlay');
-  const content = document.getElementById('dayPopupContent');
-  if (!overlay || !content) return;
-  const [y,m,d] = ymd.split('-');
-  const months = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
-  const wdays = ['domingo','lunes','martes','miércoles','jueves','viernes','sábado'];
-  const dt = new Date(ymd+'T12:00:00');
-  const label = wdays[dt.getDay()]+' '+parseInt(d)+' de '+months[parseInt(m)-1]+' '+y;
-  const dayEvs = (state.events||[]).filter(ev => eventMatchesUser(ev) && eventSpansDate(ev,ymd))
-    .sort((a,b)=>(a.time||'').localeCompare(b.time||''));
-  const icons = {guardia_hcuv:'🏥',guardia_malvarrosa:'🚑',cumpleanos:'🎂',comida:'🍽️',viaje:'✈️',reunion:'👥',congreso:'🎓',medico:'🩺',vacaciones:'🏖️',normal:'📅'};
-  const whos = {fernando:'Fernando',yolanda:'Yolanda',both:'Ambos'};
-  let html = `<div class="dp-date">${label}</div>`;
-  if (!dayEvs.length) {
-    html += '<div class="dp-empty">Sin eventos este día<br><button class="btn-primary" style="margin-top:12px;font-size:.88rem;padding:10px 18px;" onclick="document.getElementById('dayPopupOverlay').style.display='none';openCreate(''+ymd+'');">＋ Añadir evento</button></div>';
-  } else {
-    dayEvs.forEach(ev => {
-      const icon = icons[ev.type]||'📅';
-      const time = ev.time ? `<span class="dp-time">${ev.time.substring(0,5)}</span>` : '';
-      html += `<div class="dp-ev ${ownerClass(ev.who)}" data-id="${escapeHtml(ev.id)}">
-        <div class="dp-ev-top">${icon} <strong>${escapeHtml(ev.title)}</strong>${time}</div>
-        ${ev.note?`<div class="dp-ev-note">${escapeHtml(ev.note)}</div>`:''}
-        <div class="dp-ev-who">${whos[ev.who]||ev.who}</div>
-      </div>`;
-    });
-    html += `<button class="btn-soft" style="width:100%;margin-top:10px;font-size:.85rem;" onclick="document.getElementById('dayPopupOverlay').style.display='none';openCreate('${ymd}');">＋ Añadir evento este día</button>`;
-  }
-  content.innerHTML = html;
-  content.querySelectorAll('.dp-ev[data-id]').forEach(el => {
-    el.addEventListener('click', () => {
-      overlay.style.display='none';
-      openEdit(el.dataset.id);
-    });
-  });
-  overlay.style.display='flex';
-}
 
 
-// Hide 6th row if month fits in 5 rows
 function trimGridRows() {
-  const grid = document.getElementById('monthGrid');
+  var grid = document.getElementById('monthGrid');
   if (!grid) return;
-  const cells = grid.querySelectorAll('.day');
-  if (cells.length <= 35) return; // already 5 rows
-  // Check if row 6 is all other-month
-  let allOther = true;
-  for (let i = 35; i < cells.length; i++) {
+  var cells = grid.querySelectorAll('.day');
+  if (cells.length <= 35) return;
+  var allOther = true;
+  for (var i = 35; i < cells.length; i++) {
     if (!cells[i].classList.contains('other-month')) { allOther = false; break; }
   }
   if (allOther) {
-    for (let i = 35; i < cells.length; i++) cells[i].style.display = 'none';
-    grid.style.gridTemplateRows = 'repeat(5, 1fr)';
+    for (var i = 35; i < cells.length; i++) cells[i].style.display = 'none';
+    grid.style.gridTemplateRows = 'repeat(5,1fr)';
   } else {
-    for (let i = 35; i < cells.length; i++) cells[i].style.display = '';
+    for (var i = 35; i < cells.length; i++) cells[i].style.display = '';
     grid.style.gridTemplateRows = '';
   }
+}
+
+// DAY EVENTS POPUP
+function showDayEvents(ymd) {
+  var overlay = document.getElementById('dayPopupOverlay');
+  var content = document.getElementById('dayPopupContent');
+  if (!overlay || !content) return;
+  var parts = ymd.split('-');
+  var months = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+  var wdays = ['domingo','lunes','martes','miercoles','jueves','viernes','sabado'];
+  var dt = new Date(ymd + 'T12:00:00');
+  var label = wdays[dt.getDay()] + ' ' + parseInt(parts[2]) + ' de ' + months[parseInt(parts[1])-1] + ' ' + parts[0];
+  var dayEvs = (state.events || []).filter(function(ev) {
+    return eventMatchesUser(ev) && eventSpansDate(ev, ymd);
+  }).sort(function(a,b) { return (a.time||'').localeCompare(b.time||''); });
+  var icons = {guardia_hcuv:'🏥',guardia_malvarrosa:'🚑',cumpleanos:'🎂',comida:'🍽️',viaje:'✈️',reunion:'👥',congreso:'🎓',medico:'🩺',vacaciones:'🏖️',normal:'📅'};
+  var whos = {fernando:'Fernando',yolanda:'Yolanda',both:'Ambos'};
+  var html = '<div class="dp-date">' + label + '</div>';
+  if (!dayEvs.length) {
+    html += '<div class="dp-empty">Sin eventos este dia</div>';
+    html += '<button class="btn-primary" style="width:100%;margin-top:10px;font-size:.88rem;padding:10px;" id="dp-add-btn">+ Anadir evento</button>';
+  } else {
+    dayEvs.forEach(function(ev) {
+      var icon = icons[ev.type] || '📅';
+      var timeStr = ev.time ? '<span class="dp-time">' + ev.time.substring(0,5) + '</span>' : '';
+      var noteStr = ev.note ? '<div class="dp-ev-note">' + escapeHtml(ev.note) + '</div>' : '';
+      var whoStr = '<div class="dp-ev-who">' + (whos[ev.who]||ev.who) + '</div>';
+      html += '<div class="dp-ev ' + ownerClass(ev.who) + '" data-id="' + escapeHtml(ev.id) + '">';
+      html += '<div class="dp-ev-top">' + icon + ' <strong>' + escapeHtml(ev.title) + '</strong>' + timeStr + '</div>';
+      html += noteStr + whoStr + '</div>';
+    });
+    html += '<button class="btn-soft" style="width:100%;margin-top:10px;font-size:.85rem;" id="dp-add-btn">+ Anadir evento este dia</button>';
+  }
+  content.innerHTML = html;
+  var addBtn = document.getElementById('dp-add-btn');
+  if (addBtn) addBtn.addEventListener('click', function() { overlay.style.display='none'; openCreate(ymd); });
+  content.querySelectorAll('.dp-ev[data-id]').forEach(function(el) {
+    el.addEventListener('click', function() { overlay.style.display='none'; openEdit(el.dataset.id); });
+  });
+  overlay.style.display = 'flex';
 }
 
 // Swipe to change month
@@ -1431,7 +1448,7 @@ bar.style.width = (er.right - sr.left) + 'px';
       const isFirst = cells[row*7+startCol].dataset.ymd === evStart;
       const icon = (typeof iconFor === 'function') ? (iconFor(ev)||'') : '';
       bar.textContent = isFirst ? (icon ? icon+' ' : '') + ev.title : '';
-      bar.addEventListener('click', e => { e.stopPropagation(); e.preventDefault(); if(typeof openEdit==='function') openEdit(ev.id); });
+      bar.addEventListener('click', e => { e.stopPropagation(); if(window.openEdit) openEdit(ev.id); });
       layer.appendChild(bar);
     }
   });
@@ -1444,7 +1461,7 @@ bar.style.width = (er.right - sr.left) + 'px';
   window.render = function() {
     origRender.apply(this, arguments);
     if (typeof state !== 'undefined' && state.currentView === 'month') {
-      requestAnimationFrame(() => { trimGridRows(); drawMultiDayBars(); });
+      requestAnimationFrame(function() { trimGridRows(); drawMultiDayBars(); });
     }
   };
 })();
@@ -1501,5 +1518,12 @@ function switchCalView(v) {
   if(s)obs.observe(s,{childList:true,characterData:true,subtree:true});
 })();
 </script>
+
+  <div id="dayPopupOverlay" onclick="if(event.target===this)this.style.display='none';">
+    <div id="dayPopup">
+      <div class="dp-handle"></div>
+      <div id="dayPopupContent"></div>
+    </div>
+  </div>
 </body>
 </html>
