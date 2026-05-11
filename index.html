@@ -119,13 +119,13 @@
     .week-ev.owner-default{background:#e5e7eb;}
 
     /* BOTTOM BAR */
-    .bottombar-custom{display:flex;flex-direction:column;gap:4px;padding:6px 10px;padding-bottom:max(8px,var(--bot));background:#fff;border-top:1px solid var(--line);flex-shrink:0;}
-    .bottombar-row{display:flex;align-items:center;gap:6px;width:100%;}
+    .bottombar-custom{display:flex;flex-direction:column;gap:3px;padding:4px 8px;padding-bottom:max(6px,var(--bot));background:#fff;border-top:1px solid var(--line);flex-shrink:0;}
+    .bottombar-row{display:flex;align-items:center;gap:5px;width:100%;}
     .bb-left{display:flex;gap:6px;}
-    .bb-btn{border:none;border-radius:10px;padding:9px 14px;font-size:.88rem;font-weight:700;}
+    .bb-btn{border:none;border-radius:8px;padding:6px 10px;font-size:.78rem;font-weight:700;}
     .bb-btn:active{opacity:.7;}
     .bb-views{display:flex;gap:4px;}
-    .bb-view{border:none;border-radius:10px;padding:8px 11px;font-size:.78rem;font-weight:700;background:#f3f4f6;color:#374151;cursor:pointer;}
+    .bb-view{border:none;border-radius:8px;padding:6px 10px;font-size:.75rem;font-weight:700;background:#f3f4f6;color:#374151;cursor:pointer;}
     .bb-view.active{background:var(--primary);color:#fff;}
     .bb-view:active{opacity:.7;}
     .bb-new{background:var(--primary);color:#fff;}
@@ -733,7 +733,7 @@ const shown = singleDayItems
         day.addEventListener('click', (e) => {
           const pill = e.target.closest('.event-pill');
           if (pill) { e.stopPropagation(); openEdit(pill.dataset.id); return; }
-          openCreate(ymd);
+          showDayEvents(ymd);
         });
         day.dataset.ymd = ymd;
         els.monthGrid.appendChild(day);
@@ -1301,6 +1301,46 @@ const shown = singleDayItems
     startAutoRefresh();
   </script>
 <script>
+
+// DAY EVENTS POPUP
+function showDayEvents(ymd) {
+  const overlay = document.getElementById('dayPopupOverlay');
+  const content = document.getElementById('dayPopupContent');
+  if (!overlay || !content) return;
+  const [y,m,d] = ymd.split('-');
+  const months = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+  const wdays = ['domingo','lunes','martes','miércoles','jueves','viernes','sábado'];
+  const dt = new Date(ymd+'T12:00:00');
+  const label = wdays[dt.getDay()]+' '+parseInt(d)+' de '+months[parseInt(m)-1]+' '+y;
+  const dayEvs = (state.events||[]).filter(ev => eventMatchesUser(ev) && eventSpansDate(ev,ymd))
+    .sort((a,b)=>(a.time||'').localeCompare(b.time||''));
+  const icons = {guardia_hcuv:'🏥',guardia_malvarrosa:'🚑',cumpleanos:'🎂',comida:'🍽️',viaje:'✈️',reunion:'👥',congreso:'🎓',medico:'🩺',vacaciones:'🏖️',normal:'📅'};
+  const whos = {fernando:'Fernando',yolanda:'Yolanda',both:'Ambos'};
+  let html = `<div class="dp-date">${label}</div>`;
+  if (!dayEvs.length) {
+    html += '<div class="dp-empty">Sin eventos este día<br><button class="btn-primary" style="margin-top:12px;font-size:.88rem;padding:10px 18px;" onclick="document.getElementById('dayPopupOverlay').style.display='none';openCreate(''+ymd+'');">＋ Añadir evento</button></div>';
+  } else {
+    dayEvs.forEach(ev => {
+      const icon = icons[ev.type]||'📅';
+      const time = ev.time ? `<span class="dp-time">${ev.time.substring(0,5)}</span>` : '';
+      html += `<div class="dp-ev ${ownerClass(ev.who)}" data-id="${escapeHtml(ev.id)}">
+        <div class="dp-ev-top">${icon} <strong>${escapeHtml(ev.title)}</strong>${time}</div>
+        ${ev.note?`<div class="dp-ev-note">${escapeHtml(ev.note)}</div>`:''}
+        <div class="dp-ev-who">${whos[ev.who]||ev.who}</div>
+      </div>`;
+    });
+    html += `<button class="btn-soft" style="width:100%;margin-top:10px;font-size:.85rem;" onclick="document.getElementById('dayPopupOverlay').style.display='none';openCreate('${ymd}');">＋ Añadir evento este día</button>`;
+  }
+  content.innerHTML = html;
+  content.querySelectorAll('.dp-ev[data-id]').forEach(el => {
+    el.addEventListener('click', () => {
+      overlay.style.display='none';
+      openEdit(el.dataset.id);
+    });
+  });
+  overlay.style.display='flex';
+}
+
 // Swipe to change month
 (function(){
   let sx=0,sy=0;
