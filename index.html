@@ -870,13 +870,33 @@ const shown = singleDayItems
       await saveEvents();
     }
 
-    async function handleDelete() {
-      if (!state.editingId) return;
-      state.events = state.events.filter(ev => ev.id !== state.editingId);
-      render();
-      closeModal();
-      await saveEvents();
-    }
+async function handleDelete() {
+  if (!state.editingId) return;
+
+  const id = state.editingId;
+
+  if (!confirm('¿Eliminar este evento?')) return;
+
+  try {
+    setStatus('Eliminando…');
+
+    await fetch(
+      SCRIPT_URL + '?action=delete&id=' + encodeURIComponent(id),
+      { cache: 'no-store' }
+    );
+
+    state.events = state.events.filter(ev => ev.id !== id);
+    render();
+    closeModal();
+    setStatus('Eliminado');
+
+    setTimeout(() => loadEvents(false), 1000);
+
+  } catch (err) {
+    console.error(err);
+    setStatus('Error al eliminar.', true);
+  }
+}
 
     function move(step) {
       const d = new Date(state.currentDate);
