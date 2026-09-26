@@ -1330,12 +1330,33 @@ async function handleDelete() {
       render();
     });
 
-    updateOrientationClass();
+updateOrientationClass();
 
-    bindEvents();
-    render();
-    loadEvents(true);
-    startAutoRefresh();
+bindEvents();
+
+// Cargar inmediatamente los últimos eventos guardados en el móvil
+try {
+  const cached = localStorage.getItem('cal-cache');
+
+  if (cached) {
+    const parsed = JSON.parse(cached);
+
+    if (Array.isArray(parsed)) {
+      state.events = parsed;
+    }
+  }
+} catch (e) {
+  console.warn('No se pudo cargar la caché local', e);
+}
+
+// Pintar inmediatamente
+render();
+
+// Actualizar desde Google Sheets en segundo plano
+loadEvents(false);
+
+// Mantener actualización automática
+startAutoRefresh();
   </script>
 <script>
 
